@@ -6,10 +6,10 @@
     <title>Адмінка ПДД Тренажера 🛠️</title>
     <style>
         body { font-family: Arial, sans-serif; background: #2c3e50; color: white; padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; background: #34495e; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 25px; }
+        .container { max-width: 1000px; margin: 0 auto; background: #34495e; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 25px; }
         .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .filters { display: flex; gap: 15px; margin-bottom: 20px; background: #2c3e50; padding: 15px; border-radius: 8px; flex-wrap: wrap; }
-        .filters select { padding: 8px 12px; border-radius: 5px; border: none; background: white; color: #333; font-size: 14px; }
+        .filters { display: flex; gap: 15px; margin-bottom: 20px; background: #2c3e50; padding: 15px; border-radius: 8px; flex-wrap: wrap; align-items: center; }
+        .filters select, .filters input { padding: 8px 12px; border-radius: 5px; border: none; background: white; color: #333; font-size: 14px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border-radius: 5px; border: none; background: white; color: #333; font-size: 14px; box-sizing: border-box; }
@@ -29,6 +29,9 @@
         .btn-link-tool { background: #9b59b6; margin-bottom: 5px; }
         .btn-link-tool:hover { background: #8e44ad; }
         .add-box { background: #2c3e50; padding: 20px; border-radius: 8px; }
+        .wishes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .wish-column { background: #2c3e50; padding: 15px; border-radius: 8px; }
+        .wish-item { background: #34495e; padding: 10px; border-radius: 6px; margin-bottom: 10px; border-left: 4px solid #e84393; }
     </style>
 </head>
 <body>
@@ -39,7 +42,6 @@
         <a href="/" class="btn" style="background: #e84393;">На головну 🌸</a>
     </div>
 
-    <!-- Форма добавления/редактирования вопросов -->
     <div class="add-box">
         <form id="add-question-form" onsubmit="handleFormSubmit(event)">
             <input type="hidden" id="edit-id" value="">
@@ -62,7 +64,6 @@
             <div class="form-group">
                 <label>Номер правильної відповіді (1, 2, 3...):</label>
                 <input type="number" id="q-correct" value="1" min="1" required>
-                <small style="color: #bdc3c7;">Вкажи звичний номер рядка (1 — перший варіант, 2 — другий і т.д.)</small>
             </div>
             <div class="form-group">
                 <label>Коментар / пояснення </label>
@@ -77,7 +78,26 @@
     </div>
 </div>
 
-<!-- Управление существующими вопросами -->
+<div class="container">
+    <div class="header-flex">
+        <h2>🎁 Загадані бажання (Настя та Даня)</h2>
+        <div>
+            <button class="btn btn-warning" onclick="resetWishesOnServer()" style="margin-right: 10px;">🔄 Скинути бажання</button>
+            <button class="btn" onclick="loadAdminWishes()">Оновити 🔄</button>
+        </div>
+    </div>
+    <div class="wishes-grid">
+        <div class="wish-column">
+            <h3 style="color: #ff7675;">🌸 Бажання Насті</h3>
+            <div id="nastia-wishes-list">Завантаження...</div>
+        </div>
+        <div class="wish-column">
+            <h3 style="color: #74b9ff;">🛠️ Бажання Дані</h3>
+            <div id="dania-wishes-list">Завантаження...</div>
+        </div>
+    </div>
+</div>
+
 <div class="container">
     <h2>База питань 📚</h2>
     <button class="btn" onclick="loadQuestionsList()" style="margin-bottom: 15px;">Оновити список питань 🔄</button>
@@ -98,24 +118,39 @@
 
 <div class="container">
     <div class="header-flex">
-        <h2>Статистика Насті 📊</h2>
+        <h2>Статистика проходження 📊</h2>
         <button class="btn btn-danger" onclick="clearStats()">Очистити статистику 🗑️</button>
     </div>
 
     <div class="filters">
         <div>
-            <label for="lesson-filter">Фільтр за уроком: </label>
+            <label for="role-filter">Користувач: </label>
+            <select id="role-filter" onchange="filterLogs()">
+                <option value="all">Усі (Настя + Даня)</option>
+                <option value="nastia">🌸 Настя</option>
+                <option value="dania">🛠️ Даня</option>
+            </select>
+        </div>
+        <div>
+            <label for="lesson-filter">Урок: </label>
             <select id="lesson-filter" onchange="filterLogs()">
                 <option value="all">Усі уроки</option>
             </select>
         </div>
         <div>
-            <label for="status-filter">Фільтр за результатом: </label>
+            <label for="status-filter">Результат: </label>
             <select id="status-filter" onchange="filterLogs()">
                 <option value="all">Усі відповіді</option>
                 <option value="correct">Тільки правильні ✓</option>
                 <option value="incorrect">Тільки помилки ✗</option>
             </select>
+        </div>
+        <div>
+            <label for="date-filter">Дата: </label>
+            <input type="date" id="date-filter" onchange="filterLogs()">
+        </div>
+        <div>
+            <button class="btn" style="padding: 7px 10px; font-size: 12px; background: #e74c3c;" onclick="resetFilters()">Скинути фільтри</button>
         </div>
     </div>
 
@@ -124,10 +159,10 @@
     <table>
         <thead>
             <tr>
+                <th>Хто</th>
                 <th>Час</th>
                 <th>Урок</th>
                 <th>ID питання</th>
-                <th>Вибраний варіант</th>
                 <th>Статус</th>
             </tr>
         </thead>
@@ -144,20 +179,65 @@
     function insertLinkPrompt() {
         const commentField = document.getElementById('q-comment');
         const selectedText = commentField.value.substring(commentField.selectionStart, commentField.selectionEnd);
-        
-        const linkText = prompt("Введи текст посилання (наприклад: п. 26.4 ПДР):", selectedText || "пункт ПДР");
+        const linkText = prompt("Введи текст посилання:", selectedText || "пункт ПДР");
         if (!linkText) return;
-
-        const url = prompt("Введи URL посилання (наприклад: https://zakon.rada.gov.ua/...):", "https://zakon.rada.gov.ua/laws/show/1306-2001-п");
+        const url = prompt("Введи URL:", "https://zakon.rada.gov.ua/laws/show/1306-2001-п");
         if (!url) return;
-
         const htmlTag = `<a href='${url}' target='_blank'>${linkText}</a>`;
-        
-        const startPos = commentField.selectionStart;
-        const endPos = commentField.selectionEnd;
-        
-        commentField.value = commentField.value.substring(0, startPos) + htmlTag + commentField.value.substring(endPos);
+        commentField.value = commentField.value.substring(0, commentField.selectionStart) + htmlTag + commentField.value.substring(commentField.selectionEnd);
         commentField.focus();
+    }
+
+    async function resetWishesOnServer() {
+        if (confirm("Точно хочеш очистити всі загадані бажання на сервері?")) {
+            const res = await fetch('/api/admin/wishes', { method: 'DELETE' });
+            if (res.ok) {
+                alert("Всі бажання успішно скинуто! Тепер їх можна загадувати знову.");
+                loadAdminWishes();
+            } else {
+                alert("Помилка при скиданні бажань.");
+            }
+        }
+    }
+
+    async function loadAdminWishes() {
+        try {
+            const res = await fetch('/api/admin/wishes');
+            const wishes = await res.json();
+            
+            const nastiaContainer = document.getElementById('nastia-wishes-list');
+            const daniaContainer = document.getElementById('dania-wishes-list');
+            
+            let nastiaHtml = '';
+            let daniaHtml = '';
+
+            if (!wishes || wishes.length === 0) {
+                nastiaContainer.innerHTML = '<p style="color: #bdc3c7;">Порожньо</p>';
+                daniaContainer.innerHTML = '<p style="color: #bdc3c7;">Порожньо</p>';
+                return;
+            }
+
+            wishes.slice().reverse().forEach(w => {
+                const lessonText = w.lesson ? `Урок №${w.lesson}` : 'Загальне';
+                const dateText = w.date ? `(${w.date})` : '';
+                const card = `
+                    <div class="wish-item">
+                        <div style="font-size: 11px; color: #3498db; margin-bottom: 3px;">${lessonText} <span style="color: #95a5a6;">${dateText}</span></div>
+                        <div style="font-size: 14px; font-weight: bold; color: #f1c40f;">"${w.wish}"</div>
+                    </div>
+                `;
+                if (w.role === 'nastia') {
+                    nastiaHtml += card;
+                } else {
+                    daniaHtml += card;
+                }
+            });
+
+            nastiaContainer.innerHTML = nastiaHtml || '<p style="color: #bdc3c7;">Порожньо</p>';
+            daniaContainer.innerHTML = daniaHtml || '<p style="color: #bdc3c7;">Порожньо</p>';
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     async function loadStats() {
@@ -171,80 +251,10 @@
         }
     }
 
-    async function loadQuestionsList() {
-        try {
-            const res = await fetch('/api/admin/questions');
-            cachedQuestions = await res.json();
-            const tbody = document.getElementById('questions-table');
-            tbody.innerHTML = '';
-
-            if (cachedQuestions.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4">База питань порожня.</td></tr>';
-                return;
-            }
-
-            cachedQuestions.forEach(q => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>#${q.id}</td>
-                    <td>Урок #${q.lesson || 1}</td>
-                    <td>${q.question.substring(0, 50)}...</td>
-                    <td>
-                        <button class="btn btn-warning" onclick="editQuestion(${q.id})" style="margin-right: 5px;">Редагувати ✏️</button>
-                        <button class="btn btn-danger" onclick="deleteQuestion(${q.id})">Видалити 🗑️</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        } catch (e) {
-            console.error(e);
-        }
-    }
-
-    // Подготовка формы для редактирования вопроса
-    function editQuestion(id) {
-        const q = cachedQuestions.find(item => item.id === id);
-        if (!q) return;
-
-        document.getElementById('edit-id').value = q.id;
-        document.getElementById('q-lesson').value = q.lesson || 1;
-        document.getElementById('q-text').value = q.question || '';
-        document.getElementById('q-answers').value = q.answers ? q.answers.join('\n') : '';
-        document.getElementById('q-correct').value = (q.correct !== undefined) ? q.correct + 1 : 1;
-        document.getElementById('q-comment').value = q.comment || '';
-
-        document.getElementById('form-title').innerText = `Редагувати питання #${q.id} ✏️`;
-        document.getElementById('submit-btn-elem').innerText = "Зберегти зміни ✔️";
-        document.getElementById('cancel-edit-btn').style.display = 'inline-block';
-
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function resetForm() {
-        document.getElementById('add-question-form').reset();
-        document.getElementById('edit-id').value = '';
-        document.getElementById('q-correct').value = "1";
-        document.getElementById('form-title').innerText = "Додати питання в базу ✍️";
-        document.getElementById('submit-btn-elem').innerText = "Додати питання в базу 🚀";
-        document.getElementById('cancel-edit-btn').style.display = 'none';
-    }
-
-    async function deleteQuestion(id) {
-        if (confirm(`Точно хочеш видалити питання #${id}?`)) {
-            const res = await fetch(`/api/admin/questions/${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                loadQuestionsList();
-            } else {
-                alert('Помилка при видаленні!');
-            }
-        }
-    }
-
     function updateLessonDropdown(logs) {
         const select = document.getElementById('lesson-filter');
         const currentVal = select.value;
         const lessons = [...new Set(logs.map(l => l.lesson || 1))].sort((a, b) => a - b);
-        
         select.innerHTML = '<option value="all">Усі уроки</option>';
         lessons.forEach(l => {
             select.innerHTML += `<option value="${l}">Урок №${l}</option>`;
@@ -252,11 +262,25 @@
         select.value = currentVal;
     }
 
+    function resetFilters() {
+        document.getElementById('role-filter').value = 'all';
+        document.getElementById('lesson-filter').value = 'all';
+        document.getElementById('status-filter').value = 'all';
+        document.getElementById('date-filter').value = '';
+        filterLogs();
+    }
+
     function filterLogs() {
+        const roleVal = document.getElementById('role-filter').value;
         const lessonVal = document.getElementById('lesson-filter').value;
         const statusVal = document.getElementById('status-filter').value;
+        const dateVal = document.getElementById('date-filter').value;
         
         let filtered = allLogs.slice().reverse();
+
+        if (roleVal !== 'all') {
+            filtered = filtered.filter(log => (log.role || 'nastia') === roleVal);
+        }
 
         if (lessonVal !== 'all') {
             filtered = filtered.filter(log => (log.lesson || 1) == lessonVal);
@@ -266,6 +290,14 @@
             filtered = filtered.filter(log => log.isCorrect);
         } else if (statusVal === 'incorrect') {
             filtered = filtered.filter(log => !log.isCorrect);
+        }
+
+        if (dateVal) {
+            filtered = filtered.filter(log => {
+                if (!log.timestamp) return false;
+                const logDate = new Date(log.timestamp).toISOString().split('T')[0];
+                return logDate === dateVal;
+            });
         }
 
         renderTable(filtered);
@@ -282,13 +314,16 @@
 
         logs.forEach(log => {
             const tr = document.createElement('tr');
-            const time = new Date(log.timestamp).toLocaleTimeString();
-            const date = new Date(log.timestamp).toLocaleDateString();
+            const dateObj = log.timestamp ? new Date(log.timestamp) : new Date();
+            const time = dateObj.toLocaleTimeString();
+            const date = dateObj.toLocaleDateString();
+            const who = (log.role === 'dania') ? '🛠️ Даня' : '🌸 Настя';
+
             tr.innerHTML = `
+                <td><b>${who}</b></td>
                 <td>${date} ${time}</td>
                 <td>Урок #${log.lesson || 1}</td>
                 <td>Питання #${log.questionId}</td>
-                <td>Індекс: ${log.answerIndex}</td>
                 <td class="${log.isCorrect ? 'correct' : 'incorrect'}">
                     ${log.isCorrect ? 'Вірно ✓' : 'Помилка ✗'}
                 </td>
@@ -297,25 +332,73 @@
         });
     }
 
+    async function loadQuestionsList() {
+        try {
+            const res = await fetch('/api/admin/questions');
+            cachedQuestions = await res.json();
+            const tbody = document.getElementById('questions-table');
+            tbody.innerHTML = '';
+            if (cachedQuestions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4">База питань порожня.</td></tr>';
+                return;
+            }
+            cachedQuestions.forEach(q => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>#${q.id}</td>
+                    <td>Урок #${q.lesson || 1}</td>
+                    <td>${q.question.substring(0, 50)}...</td>
+                    <td>
+                        <button class="btn btn-warning" onclick="editQuestion(${q.id})" style="margin-right: 5px;">Редагувати ✏️</button>
+                        <button class="btn btn-danger" onclick="deleteQuestion(${q.id})">Видалити 🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    function editQuestion(id) {
+        const q = cachedQuestions.find(item => item.id === id);
+        if (!q) return;
+        document.getElementById('edit-id').value = q.id;
+        document.getElementById('q-lesson').value = q.lesson || 1;
+        document.getElementById('q-text').value = q.question || '';
+        document.getElementById('q-answers').value = q.answers ? q.answers.join('\n') : '';
+        document.getElementById('q-correct').value = (q.correct !== undefined) ? q.correct + 1 : 1;
+        document.getElementById('q-comment').value = q.comment || '';
+        document.getElementById('form-title').innerText = `Редагувати питання #${q.id} ✏️`;
+        document.getElementById('submit-btn-elem').innerText = "Зберегти зміни ✔️";
+        document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetForm() {
+        document.getElementById('add-question-form').reset();
+        document.getElementById('edit-id').value = '';
+        document.getElementById('q-correct').value = "1";
+        document.getElementById('form-title').innerText = "Додати питання в базу ✍️";
+        document.getElementById('submit-btn-elem').innerText = "Додати питання в базу 🚀";
+        document.getElementById('cancel-edit-btn').style.display = 'none';
+    }
+
+    async function deleteQuestion(id) {
+        if (confirm(`Точно хочеш видалити питання #${id}?`)) {
+            const res = await fetch(`/api/admin/questions/${id}`, { method: 'DELETE' });
+            if (res.ok) loadQuestionsList();
+        }
+    }
+
     async function handleFormSubmit(event) {
         event.preventDefault();
-        
         const editId = document.getElementById('edit-id').value;
         const lesson = document.getElementById('q-lesson').value;
         const question = document.getElementById('q-text').value;
         const imageFile = document.getElementById('q-image-file').files[0];
         const answersRaw = document.getElementById('q-answers').value;
-        
-        const correctInput = Number(document.getElementById('q-correct').value);
-        const correct = correctInput > 0 ? correctInput - 1 : 0;
+        const correct = Number(document.getElementById('q-correct').value) - 1;
         const comment = document.getElementById('q-comment').value;
-
         const answers = answersRaw.split('\n').map(a => a.trim()).filter(a => a.length > 0);
-
-        if (answers.length < 2) {
-            alert('Потрібно мінімум 2 варіанти відповіді!');
-            return;
-        }
 
         const formData = new FormData();
         formData.append('lesson', lesson);
@@ -323,41 +406,28 @@
         formData.append('correct', correct);
         formData.append('comment', comment);
         formData.append('answers', JSON.stringify(answers));
-        if (imageFile) {
-            formData.append('imageFile', imageFile);
-        }
+        if (imageFile) formData.append('imageFile', imageFile);
 
         const url = editId ? `/api/admin/questions/${editId}` : '/api/admin/questions';
-        const method = editId ? 'PUT' : 'POST';
-
-        const res = await fetch(url, {
-            method: method,
-            body: formData
-        });
-
+        const res = await fetch(url, { method: editId ? 'PUT' : 'POST', body: formData });
         const data = await res.json();
         if (data.success) {
-            alert(editId ? 'Питання успішно оновлено! ✏️' : 'Питання успішно додано до бази! 🎉');
+            alert(editId ? 'Питання оновлено! ✏️' : 'Питання додано! 🎉');
             resetForm();
             loadQuestionsList();
-        } else {
-            alert('Помилка при збереженні питання!');
         }
     }
 
     async function clearStats() {
-        if (confirm('Точно хочеш видалити всю історію відповідей?')) {
+        if (confirm('Очистити всю статистику?')) {
             const res = await fetch('/api/admin/stats', { method: 'DELETE' });
-            if (res.ok) {
-                loadStats();
-            } else {
-                alert('Помилка при очищенні!');
-            }
+            if (res.ok) loadStats();
         }
     }
 
     loadStats();
     loadQuestionsList();
+    loadAdminWishes();
 </script>
 
 </body>
