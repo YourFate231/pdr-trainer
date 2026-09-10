@@ -130,13 +130,13 @@
         }
         .hidden { display: none !important; }
         .cheat-answer { display: none; }
-        .cheat-answer.revealed { display: block; color: #27ae60; font-weight: bold; margin-top: 4px; }
+        .cheat-answer.revealed { display: block; color: #27ae60; font-weight: bold; margin-top: 6px; background: #e8f8f5; padding: 6px 10px; border-radius: 6px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- ЭКРАН 1: Выбор роли -->
+    <!-- ЕКРАН 1: Выбор роли -->
     <div id="role-screen" class="hidden">
         <h2>Привіт! Хто заходить? 🚗</h2>
         <p>Обери свій профіль, щоб продовжити:</p>
@@ -146,14 +146,14 @@
         </div>
     </div>
 
-    <!-- ЭКРАН 2: Меню уроков -->
+    <!-- ЕКРАН 2: Меню уроков -->
     <div id="lessons-screen" class="hidden">
         <h2 id="lessons-greeting">Обери урок ❤️</h2>
         <div id="lessons-list">Завантаження уроків...</div>
         <button class="btn" style="background: #636e72; margin-top: 15px;" onclick="goHome()">Змінити користувача</button>
     </div>
 
-    <!-- ЭКРАН 3: Процесс теста -->
+    <!-- ЕКРАН 3: Процесс теста -->
     <div id="quiz-screen" class="hidden">
         <h3 id="lesson-title">Урок</h3>
         <div class="question-box" id="question-text">Завантаження питання...</div>
@@ -163,7 +163,7 @@
         <button class="btn" style="background: #636e72; margin-top: 10px;" onclick="showLessonsScreen()">До списку уроків</button>
     </div>
 
-    <!-- ЭКРАН 4: Блок ответа с хомяками -->
+    <!-- ЕКРАН 4: Блок ответа с хомяками -->
     <div id="result-box">
         <h3 id="result-title"></h3>
         <div id="hamster-container"></div>
@@ -171,7 +171,7 @@
         <button class="btn" id="next-question-btn" onclick="loadNextQuestion()">Наступне питання</button>
     </div>
 
-    <!-- ЭКРАН 5: Шпаргалка / Просмотр всех вопросов урока -->
+    <!-- ЕКРАН 5: Шпаргалка / Просмотр всех вопросов урока -->
     <div id="cheat-screen" class="hidden">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <h3 id="cheat-title" style="margin: 0;">Шпаргалка 📚</h3>
@@ -194,7 +194,8 @@
 
     async function init() {
         try {
-            const res = await fetch('/api/questions');
+            // Завантажуємо повні питання (включаючи правильні відповіді для шпаргалки та тренажера)
+            const res = await fetch('/api/admin/questions');
             allQuestions = await res.json();
             
             const savedRole = localStorage.getItem('pdr_role');
@@ -203,7 +204,8 @@
             if (savedRole) {
                 currentRole = savedRole;
                 if (savedLesson) {
-                    startLesson(Number(savedLesson), false);
+                    // Не відкриваємо автоматично урок при старті, а показуємо меню, щоб уникнути багів індексу
+                    showLessonsScreen();
                 } else {
                     showLessonsScreen();
                 }
@@ -261,7 +263,7 @@
         listDiv.innerHTML = '';
 
         if (!allQuestions || allQuestions.length === 0) {
-            listDiv.innerHTML = '<p style="color: red;">Питань не знайдено у базі (`questions.json`).</p>';
+            listDiv.innerHTML = '<p style="color: red;">Питань не знайдено у базі (`questions.json`). Додай їх через адмін-панель.</p>';
             return;
         }
 
@@ -288,7 +290,7 @@
                     <div style="text-align: right;"><span style="color: #e84393; font-weight: bold;">Розпочати ➔</span></div>
                 </div>
             `;
-            card.onclick = () => startLesson(Number(lessonId), true);
+            card.onclick = () => startLesson(Number(lessonId));
             listDiv.appendChild(card);
         });
     }
@@ -307,13 +309,14 @@
         lessonQ.forEach((q, idx) => {
             let answersHtml = '<ul style="margin: 5px 0; padding-left: 20px;">';
             q.answers.forEach((ans, aIdx) => {
-                const isCorrect = aIdx === q.correct;
+                const isCorrect = Number(aIdx) === Number(q.correct);
                 const style = isCorrect ? 'color: #27ae60; font-weight: bold;' : 'color: #333;';
-                answersHtml += `<li style="${style}">${ans}</li>`;
+                answersHtml += `<li style="${style}">${ans} ${isCorrect ? '✓' : ''}</li>`;
             });
             answersHtml += '</ul>';
 
-            let correctText = q.answers[q.correct] || "Не вказано";
+            // Надійне витягування правильної відповіді за індексом
+            let correctText = (q.answers && q.answers[q.correct] !== undefined) ? q.answers[q.correct] : "Не вказано";
             let imgHtml = q.image ? `<div style="text-align: center; margin: 5px 0;"><img src="${q.image}" style="max-height: 120px; border-radius: 6px;"></div>` : '';
 
             const itemDiv = document.createElement('div');
@@ -349,12 +352,11 @@
         }
     }
 
-    function startLesson(lessonId, saveToStorage = true) {
+    function startLesson(lessonId) {
         currentLessonId = lessonId;
-        if (saveToStorage) {
-            localStorage.setItem('pdr_lesson', lessonId);
-        }
+        localStorage.setItem('pdr_lesson', lessonId);
         
+        // Фільтруємо питання конкретно для цього уроку
         currentLessonQuestions = allQuestions.filter(q => (q.lesson || 1) === lessonId);
         currentIndex = 0;
         correctAnswersCount = 0;
@@ -364,10 +366,15 @@
         document.getElementById('cheat-screen').classList.add('hidden');
         document.getElementById('quiz-screen').classList.remove('hidden');
         document.getElementById('lesson-title').innerText = `Урок №${lessonId} (${currentRole === 'dania' ? 'Даня' : 'Настя'})`;
+        
         showQuestion();
     }
 
     function showQuestion() {
+        if (!currentLessonQuestions || currentLessonQuestions.length === 0 || currentIndex >= currentLessonQuestions.length) {
+            return;
+        }
+
         const q = currentLessonQuestions[currentIndex];
         document.getElementById('question-text').innerText = `${currentIndex + 1}. ${q.question}`;
         
@@ -457,7 +464,6 @@
             const resultBox = document.getElementById('result-box');
             resultBox.className = 'correct';
             
-            // Виправляємо рід: для Насті — здобула, для Дані — здобув
             const verb = currentRole === 'nastia' ? 'здобула' : 'здобув';
 
             let message = `<h2>Урок завершено! 🏆</h2><p>Правильних відповідей: <b>${correctAnswersCount} з ${total}</b> (${percent}%)</p>`;
