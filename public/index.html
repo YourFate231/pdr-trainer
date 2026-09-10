@@ -74,9 +74,6 @@
             animation: fastBounce 0.8s infinite ease-in-out;
         }
         .btn-dania:hover { animation: none; background-color: #0070c0; }
-
-        .btn-success { background-color: #2ecc71; }
-        .btn-success:hover { background-color: #27ae60; }
         
         .lesson-card {
             background: #fff;
@@ -135,7 +132,7 @@
 <body>
 
 <div class="container">
-    <!-- ЕКРАН 1: Выбор роли -->
+    <!-- ЕКРАН 1: Вибір ролі -->
     <div id="role-screen" class="hidden">
         <h2>Привіт! Хто заходить? 🚗</h2>
         <p>Обери свій профіль, щоб продовжити:</p>
@@ -145,14 +142,14 @@
         </div>
     </div>
 
-    <!-- ЕКРАН 2: Меню уроков -->
+    <!-- ЕКРАН 2: Меню уроків -->
     <div id="lessons-screen" class="hidden">
         <h2 id="lessons-greeting">Обери урок ❤️</h2>
         <div id="lessons-list">Завантаження уроків...</div>
         <button class="btn" style="background: #636e72; margin-top: 15px;" onclick="goHome()">Змінити користувача</button>
     </div>
 
-    <!-- ЕКРАН 3: Процесс теста -->
+    <!-- ЕКРАН 3: Процес тесту -->
     <div id="quiz-screen" class="hidden">
         <h3 id="lesson-title">Урок</h3>
         <div class="question-box" id="question-text">Завантаження питання...</div>
@@ -162,7 +159,7 @@
         <button class="btn" style="background: #636e72; margin-top: 10px;" onclick="showLessonsScreen()">До списку уроків</button>
     </div>
 
-    <!-- ЕКРАН 4: Блок ответа с хомяками -->
+    <!-- ЕКРАН 4: Блок відповіді з хом'яками -->
     <div id="result-box">
         <h3 id="result-title"></h3>
         <div id="hamster-container"></div>
@@ -170,7 +167,7 @@
         <button class="btn" id="next-question-btn" onclick="loadNextQuestion()">Наступне питання</button>
     </div>
 
-    <!-- ЕКРАН 5: Шпаргалка / Просмотр всех вопросов урока -->
+    <!-- ЕКРАН 5: Шпаргалка -->
     <div id="cheat-screen" class="hidden">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <h3 id="cheat-title" style="margin: 0;">Шпаргалка 📚</h3>
@@ -301,7 +298,6 @@
             let answersHtml = '<ul style="margin: 5px 0; padding-left: 20px;">';
             q.answers.forEach((ans, aIdx) => {
                 const isCorrect = Number(aIdx) === Number(q.correct);
-                // За замовчуванням стиль звичайний, без підсвічування
                 answersHtml += `<li class="ans-item" data-correct="${isCorrect}">${ans}</li>`;
             });
             answersHtml += '</ul>';
@@ -354,13 +350,20 @@
         currentLessonId = lessonId;
         localStorage.setItem('pdr_lesson', lessonId);
         
+        // Жорстке скидання всіх індексів та лічильників при запуску
         currentLessonQuestions = allQuestions.filter(q => (q.lesson || 1) === lessonId);
         currentIndex = 0;
         correctAnswersCount = 0;
+        selectedAnswerIndex = null;
 
         document.getElementById('role-screen').classList.add('hidden');
         document.getElementById('lessons-screen').classList.add('hidden');
         document.getElementById('cheat-screen').classList.add('hidden');
+        
+        const resultBox = document.getElementById('result-box');
+        resultBox.style.display = 'none';
+        resultBox.innerHTML = '';
+
         document.getElementById('quiz-screen').classList.remove('hidden');
         document.getElementById('lesson-title').innerText = `Урок №${lessonId} (${currentRole === 'dania' ? 'Даня' : 'Настя'})`;
         
@@ -439,11 +442,11 @@
 
         if (data.isCorrect) {
             resultBox.className = 'correct';
-            resultTitle.innerText = 'Правильно! 🎉 Хомяк задоволений!';
+            resultTitle.innerText = 'Правильно! 🎉 Хом\'як задоволений!';
             hamsterContainer.innerHTML = `<img src="/happy.jpg" class="hamster-img" alt="Happy Hamster">`;
         } else {
             resultBox.className = 'incorrect';
-            resultTitle.innerText = 'Помилка ❌ Хомяк сумує...';
+            resultTitle.innerText = 'Помилка ❌ Хом\'як сумує...';
             hamsterContainer.innerHTML = `<img src="/sad.jpg" class="hamster-img" alt="Sad Hamster">`;
         }
         
