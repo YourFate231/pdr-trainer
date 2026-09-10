@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Адмінка ПДД Тренажера 🛠️</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #2c3e50; color: white; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: #34495e; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 25px; }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .filters { display: flex; gap: 15px; margin-bottom: 20px; background: #2c3e50; padding: 15px; border-radius: 8px; flex-wrap: wrap; }
+        .filters select { padding: 8px 12px; border-radius: 5px; border: none; background: white; color: #333; font-size: 14px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border-radius: 5px; border: none; background: white; color: #333; font-size: 14px; box-sizing: border-box; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; border-bottom: 1px solid #4e6d8c; text-align: left; }
+        th { background: #2980b9; }
+        .correct { color: #2ecc71; font-weight: bold; }
+        .incorrect { color: #e74c3c; font-weight: bold; }
+        .btn { background: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; font-size: 14px; transition: 0.2s; }
+        .btn:hover { background: #2980b9; }
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-success { background: #2ecc71; }
+        .btn-success:hover { background: #27ae60; }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-warning:hover { background: #d68910; }
+        .btn-link-tool { background: #9b59b6; margin-bottom: 5px; }
+        .btn-link-tool:hover { background: #8e44ad; }
+        .add-box { background: #2c3e50; padding: 20px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-flex">
+        <h2 id="form-title">Додати питання в базу ✍️</h2>
+        <a href="/" class="btn" style="background: #e84393;">На головну 🌸</a>
+    </div>
+
+    <!-- Форма добавления/редактирования вопросов -->
+    <div class="add-box">
+        <form id="add-question-form" onsubmit="handleFormSubmit(event)">
+            <input type="hidden" id="edit-id" value="">
+            <div class="form-group">
+                <label>Номер уроку (теми):</label>
+                <input type="number" id="q-lesson" value="1" min="1" required>
+            </div>
+            <div class="form-group">
+                <label>Текст питання:</label>
+                <textarea id="q-text" rows="2" placeholder="Наприклад: Кому зобов'язаний дати дорогу..." required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Завантажити нову картинку/схему з ПК (необов'язково):</label>
+                <input type="file" id="q-image-file" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label>Варіанти відповідей (кожен з нового рядка):</label>
+                <textarea id="q-answers" rows="3" placeholder="Варіант 1&#10;Варіант 2&#10;Варіант 3" required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Номер правильної відповіді (1, 2, 3...):</label>
+                <input type="number" id="q-correct" value="1" min="1" required>
+                <small style="color: #bdc3c7;">Вкажи звичний номер рядка (1 — перший варіант, 2 — другий і т.д.)</small>
+            </div>
+            <div class="form-group">
+                <label>Коментар / пояснення </label>
+                <button type="button" class="btn btn-link-tool" onclick="insertLinkPrompt()">🔗 Вставити посилання на ПДР</button>
+                <textarea id="q-comment" rows="3" placeholder="Згідно з п. 26.4 ПДР..."></textarea>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" id="submit-btn-elem" class="btn btn-success">Додати питання в базу 🚀</button>
+                <button type="button" id="cancel-edit-btn" class="btn btn-danger" style="display: none;" onclick="resetForm()">Скасувати редагування ❌</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Управление существующими вопросами -->
+<div class="container">
+    <h2>База питань 📚</h2>
+    <button class="btn" onclick="loadQuestionsList()" style="margin-bottom: 15px;">Оновити список питань 🔄</button>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Урок</th>
+                <th>Питання</th>
+                <th>Дії</th>
+            </tr>
+        </thead>
+        <tbody id="questions-table">
+            <tr><td colspan="4">Завантаження...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="container">
+    <div class="header-flex">
+        <h2>Статистика Насті 📊</h2>
+        <button class="btn btn-danger" onclick="clearStats()">Очистити статистику 🗑️</button>
+    </div>
+
+    <div class="filters">
+        <div>
+            <label for="lesson-filter">Фільтр за уроком: </label>
+            <select id="lesson-filter" onchange="filterLogs()">
+                <option value="all">Усі уроки</option>
+            </select>
+        </div>
+        <div>
+            <label for="status-filter">Фільтр за результатом: </label>
+            <select id="status-filter" onchange="filterLogs()">
+                <option value="all">Усі відповіді</option>
+                <option value="correct">Тільки правильні ✓</option>
+                <option value="incorrect">Тільки помилки ✗</option>
+            </select>
+        </div>
+    </div>
+
+    <button class="btn" onclick="loadStats()">Оновити дані 🔄</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Час</th>
+                <th>Урок</th>
+                <th>ID питання</th>
+                <th>Вибраний варіант</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody id="stats-table">
+            <tr><td colspan="5">Завантаження...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    let allLogs = [];
+    let cachedQuestions = [];
+
+    function insertLinkPrompt() {
+        const commentField = document.getElementById('q-comment');
+        const selectedText = commentField.value.substring(commentField.selectionStart, commentField.selectionEnd);
+        
+        const linkText = prompt("Введи текст посилання (наприклад: п. 26.4 ПДР):", selectedText || "пункт ПДР");
+        if (!linkText) return;
+
+        const url = prompt("Введи URL посилання (наприклад: https://zakon.rada.gov.ua/...):", "https://zakon.rada.gov.ua/laws/show/1306-2001-п");
+        if (!url) return;
+
+        const htmlTag = `<a href='${url}' target='_blank'>${linkText}</a>`;
+        
+        const startPos = commentField.selectionStart;
+        const endPos = commentField.selectionEnd;
+        
+        commentField.value = commentField.value.substring(0, startPos) + htmlTag + commentField.value.substring(endPos);
+        commentField.focus();
+    }
+
+    async function loadStats() {
+        try {
+            const res = await fetch('/api/admin/stats');
+            allLogs = await res.json();
+            updateLessonDropdown(allLogs);
+            filterLogs();
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function loadQuestionsList() {
+        try {
+            const res = await fetch('/api/admin/questions');
+            cachedQuestions = await res.json();
+            const tbody = document.getElementById('questions-table');
+            tbody.innerHTML = '';
+
+            if (cachedQuestions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4">База питань порожня.</td></tr>';
+                return;
+            }
+
+            cachedQuestions.forEach(q => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>#${q.id}</td>
+                    <td>Урок #${q.lesson || 1}</td>
+                    <td>${q.question.substring(0, 50)}...</td>
+                    <td>
+                        <button class="btn btn-warning" onclick="editQuestion(${q.id})" style="margin-right: 5px;">Редагувати ✏️</button>
+                        <button class="btn btn-danger" onclick="deleteQuestion(${q.id})">Видалити 🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    // Подготовка формы для редактирования вопроса
+    function editQuestion(id) {
+        const q = cachedQuestions.find(item => item.id === id);
+        if (!q) return;
+
+        document.getElementById('edit-id').value = q.id;
+        document.getElementById('q-lesson').value = q.lesson || 1;
+        document.getElementById('q-text').value = q.question || '';
+        document.getElementById('q-answers').value = q.answers ? q.answers.join('\n') : '';
+        document.getElementById('q-correct').value = (q.correct !== undefined) ? q.correct + 1 : 1;
+        document.getElementById('q-comment').value = q.comment || '';
+
+        document.getElementById('form-title').innerText = `Редагувати питання #${q.id} ✏️`;
+        document.getElementById('submit-btn-elem').innerText = "Зберегти зміни ✔️";
+        document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetForm() {
+        document.getElementById('add-question-form').reset();
+        document.getElementById('edit-id').value = '';
+        document.getElementById('q-correct').value = "1";
+        document.getElementById('form-title').innerText = "Додати питання в базу ✍️";
+        document.getElementById('submit-btn-elem').innerText = "Додати питання в базу 🚀";
+        document.getElementById('cancel-edit-btn').style.display = 'none';
+    }
+
+    async function deleteQuestion(id) {
+        if (confirm(`Точно хочеш видалити питання #${id}?`)) {
+            const res = await fetch(`/api/admin/questions/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                loadQuestionsList();
+            } else {
+                alert('Помилка при видаленні!');
+            }
+        }
+    }
+
+    function updateLessonDropdown(logs) {
+        const select = document.getElementById('lesson-filter');
+        const currentVal = select.value;
+        const lessons = [...new Set(logs.map(l => l.lesson || 1))].sort((a, b) => a - b);
+        
+        select.innerHTML = '<option value="all">Усі уроки</option>';
+        lessons.forEach(l => {
+            select.innerHTML += `<option value="${l}">Урок №${l}</option>`;
+        });
+        select.value = currentVal;
+    }
+
+    function filterLogs() {
+        const lessonVal = document.getElementById('lesson-filter').value;
+        const statusVal = document.getElementById('status-filter').value;
+        
+        let filtered = allLogs.slice().reverse();
+
+        if (lessonVal !== 'all') {
+            filtered = filtered.filter(log => (log.lesson || 1) == lessonVal);
+        }
+
+        if (statusVal === 'correct') {
+            filtered = filtered.filter(log => log.isCorrect);
+        } else if (statusVal === 'incorrect') {
+            filtered = filtered.filter(log => !log.isCorrect);
+        }
+
+        renderTable(filtered);
+    }
+
+    function renderTable(logs) {
+        const tbody = document.getElementById('stats-table');
+        tbody.innerHTML = '';
+
+        if (logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5">Нічого не знайдено за цими фільтрами.</td></tr>';
+            return;
+        }
+
+        logs.forEach(log => {
+            const tr = document.createElement('tr');
+            const time = new Date(log.timestamp).toLocaleTimeString();
+            const date = new Date(log.timestamp).toLocaleDateString();
+            tr.innerHTML = `
+                <td>${date} ${time}</td>
+                <td>Урок #${log.lesson || 1}</td>
+                <td>Питання #${log.questionId}</td>
+                <td>Індекс: ${log.answerIndex}</td>
+                <td class="${log.isCorrect ? 'correct' : 'incorrect'}">
+                    ${log.isCorrect ? 'Вірно ✓' : 'Помилка ✗'}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function handleFormSubmit(event) {
+        event.preventDefault();
+        
+        const editId = document.getElementById('edit-id').value;
+        const lesson = document.getElementById('q-lesson').value;
+        const question = document.getElementById('q-text').value;
+        const imageFile = document.getElementById('q-image-file').files[0];
+        const answersRaw = document.getElementById('q-answers').value;
+        
+        const correctInput = Number(document.getElementById('q-correct').value);
+        const correct = correctInput > 0 ? correctInput - 1 : 0;
+        const comment = document.getElementById('q-comment').value;
+
+        const answers = answersRaw.split('\n').map(a => a.trim()).filter(a => a.length > 0);
+
+        if (answers.length < 2) {
+            alert('Потрібно мінімум 2 варіанти відповіді!');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('lesson', lesson);
+        formData.append('question', question);
+        formData.append('correct', correct);
+        formData.append('comment', comment);
+        formData.append('answers', JSON.stringify(answers));
+        if (imageFile) {
+            formData.append('imageFile', imageFile);
+        }
+
+        const url = editId ? `/api/admin/questions/${editId}` : '/api/admin/questions';
+        const method = editId ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+            method: method,
+            body: formData
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            alert(editId ? 'Питання успішно оновлено! ✏️' : 'Питання успішно додано до бази! 🎉');
+            resetForm();
+            loadQuestionsList();
+        } else {
+            alert('Помилка при збереженні питання!');
+        }
+    }
+
+    async function clearStats() {
+        if (confirm('Точно хочеш видалити всю історію відповідей?')) {
+            const res = await fetch('/api/admin/stats', { method: 'DELETE' });
+            if (res.ok) {
+                loadStats();
+            } else {
+                alert('Помилка при очищенні!');
+            }
+        }
+    }
+
+    loadStats();
+    loadQuestionsList();
+</script>
+
+</body>
+</html>

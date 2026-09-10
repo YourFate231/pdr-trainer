@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ПДД Тренажер ❤️</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(90deg, #ff9a9e 0%, #fecfef 50%, #a1c4fd 100%);
+            background-size: 200% 200%;
+            animation: bgGradient 15s ease infinite;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        @keyframes bgGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            max-width: 650px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        h2, h3 { color: #333; margin-top: 0; }
+        .btn-group { display: flex; gap: 15px; margin-top: 20px; }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            transition: transform 0.2s, background 0.2s;
+            text-decoration: none;
+        }
+        .btn:hover { transform: scale(1.02); }
+
+        @keyframes softPulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(232, 67, 147, 0.4); }
+            50% { transform: scale(1.04); box-shadow: 0 0 15px 5px rgba(232, 67, 147, 0.2); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(232, 67, 147, 0); }
+        }
+
+        @keyframes fastBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); box-shadow: 0 5px 15px rgba(9, 132, 227, 0.4); }
+        }
+
+        .btn-nastia {
+            background-color: #e84393;
+            animation: softPulse 3s infinite ease-in-out;
+        }
+        .btn-nastia:hover { animation: none; background-color: #d63031; }
+
+        .btn-dania {
+            background-color: #0984e3;
+            animation: fastBounce 0.8s infinite ease-in-out;
+        }
+        .btn-dania:hover { animation: none; background-color: #0070c0; }
+
+        .btn-success { background-color: #2ecc71; }
+        .btn-success:hover { background-color: #27ae60; }
+        
+        .lesson-card {
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .lesson-card:hover { border-color: #e84393; background: #fff0f6; transform: translateX(3px); }
+        
+        .question-box { margin-bottom: 15px; font-size: 18px; font-weight: bold; color: #2c3e50; }
+        .answers-list { list-style: none; padding: 0; }
+        .answers-list li {
+            margin-bottom: 10px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fff;
+        }
+        .answers-list li:hover { background-color: #f8f9fa; border-color: #3498db; }
+        .answers-list li.selected { background-color: #ebf5fb; border-color: #3498db; font-weight: bold; }
+        
+        #result-box {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            display: none;
+            text-align: center;
+        }
+        .correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        
+        .hamster-img {
+            width: 110px !important;
+            height: 110px !important;
+            max-width: 110px !important;
+            max-height: 110px !important;
+            object-fit: cover !important;
+            border-radius: 50% !important;
+            margin: 10px auto !important;
+            border: 3px solid white !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+            display: block !important;
+        }
+        .hidden { display: none !important; }
+        .cheat-answer { display: none; }
+        .cheat-answer.revealed { display: block; color: #27ae60; font-weight: bold; margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- ЭКРАН 1: Выбор роли -->
+    <div id="role-screen" class="hidden">
+        <h2>Привіт! Хто заходить? 🚗</h2>
+        <p>Обери свій профіль, щоб продовжити:</p>
+        <div class="btn-group">
+            <button class="btn btn-nastia" onclick="selectRole('nastia')">Я — Настя 🌸</button>
+            <button class="btn btn-dania" onclick="selectRole('dania')">Я — Даня 🛠️</button>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 2: Меню уроков -->
+    <div id="lessons-screen" class="hidden">
+        <h2 id="lessons-greeting">Обери урок ❤️</h2>
+        <div id="lessons-list">Завантаження уроків...</div>
+        <button class="btn" style="background: #636e72; margin-top: 15px;" onclick="goHome()">Змінити користувача</button>
+    </div>
+
+    <!-- ЭКРАН 3: Процесс теста -->
+    <div id="quiz-screen" class="hidden">
+        <h3 id="lesson-title">Урок</h3>
+        <div class="question-box" id="question-text">Завантаження питання...</div>
+        <div id="question-image-container" style="margin-bottom: 15px; text-align: center; display: none;"></div>
+        <ul class="answers-list" id="answers-list"></ul>
+        <button class="btn" id="submit-btn" onclick="submitAnswer()" disabled>Відповісти</button>
+        <button class="btn" style="background: #636e72; margin-top: 10px;" onclick="showLessonsScreen()">До списку уроків</button>
+    </div>
+
+    <!-- ЭКРАН 4: Блок ответа с хомяками -->
+    <div id="result-box">
+        <h3 id="result-title"></h3>
+        <div id="hamster-container"></div>
+        <p id="result-comment" style="text-align: left;"></p>
+        <button class="btn" id="next-question-btn" onclick="loadNextQuestion()">Наступне питання</button>
+    </div>
+
+    <!-- ЭКРАН 5: Шпаргалка / Просмотр всех вопросов урока -->
+    <div id="cheat-screen" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 id="cheat-title" style="margin: 0;">Шпаргалка 📚</h3>
+            <button class="btn" id="toggle-answers-btn" style="width: auto; padding: 8px 12px; font-size: 13px; background: #e67e22;" onclick="toggleAllCheatAnswers()">Показати відповіді 👀</button>
+        </div>
+        <div id="cheat-content" style="max-height: 400px; overflow-y: auto; text-align: left; margin-bottom: 15px; padding-right: 5px;"></div>
+        <button class="btn" onclick="showLessonsScreen()">Назад до списку уроків</button>
+    </div>
+</div>
+
+<script>
+    let allQuestions = [];
+    let currentLessonQuestions = [];
+    let currentIndex = 0;
+    let selectedAnswerIndex = null;
+    let currentLessonId = null;
+    let currentRole = 'nastia';
+    let correctAnswersCount = 0;
+    let areAnswersRevealed = false;
+
+    async function init() {
+        try {
+            const res = await fetch('/api/questions');
+            allQuestions = await res.json();
+            
+            const savedRole = localStorage.getItem('pdr_role');
+            const savedLesson = localStorage.getItem('pdr_lesson');
+
+            if (savedRole) {
+                currentRole = savedRole;
+                if (savedLesson) {
+                    startLesson(Number(savedLesson), false);
+                } else {
+                    showLessonsScreen();
+                }
+            } else {
+                showRoleScreen();
+            }
+        } catch (e) {
+            console.error("Помилка завантаження питань:", e);
+            document.getElementById('lessons-list').innerText = "Помилка зв'язку з сервером!";
+            showRoleScreen();
+        }
+    }
+
+    function showRoleScreen() {
+        localStorage.removeItem('pdr_role');
+        localStorage.removeItem('pdr_lesson');
+        document.getElementById('role-screen').classList.remove('hidden');
+        document.getElementById('lessons-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('cheat-screen').classList.add('hidden');
+    }
+
+    function showLessonsScreen() {
+        document.getElementById('role-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('cheat-screen').classList.add('hidden');
+        document.getElementById('result-box').style.display = 'none';
+        document.getElementById('lessons-screen').classList.remove('hidden');
+        
+        const greeting = document.getElementById('lessons-greeting');
+        if (currentRole === 'dania') {
+            greeting.innerText = "Обери урок, Даня (Режим тренування) 🛠️";
+        } else {
+            greeting.innerText = "Обери урок, Настя ❤️";
+        }
+        renderLessons();
+    }
+
+    function selectRole(role) {
+        currentRole = role;
+        localStorage.setItem('pdr_role', role);
+        if (role === 'dania' && window.confirm("Бажаєш перейти в адмін-панель управління базами? ОК — в адмінку, Скасувати — проходити як Даня-учень.")) {
+            window.location.href = '/admin.html';
+            return;
+        }
+        showLessonsScreen();
+    }
+
+    function goHome() {
+        showRoleScreen();
+    }
+
+    function renderLessons() {
+        const listDiv = document.getElementById('lessons-list');
+        listDiv.innerHTML = '';
+
+        if (!allQuestions || allQuestions.length === 0) {
+            listDiv.innerHTML = '<p style="color: red;">Питань не знайдено у базі (`questions.json`).</p>';
+            return;
+        }
+
+        const lessonsObj = {};
+        allQuestions.forEach(q => {
+            const lId = q.lesson || 1;
+            if (!lessonsObj[lId]) lessonsObj[lId] = 0;
+            lessonsObj[lId]++;
+        });
+
+        Object.keys(lessonsObj).forEach(lessonId => {
+            const savedScore = localStorage.getItem(`pdr_score_${currentRole}_${lessonId}`) || 'Ще не пройдено';
+            
+            const card = document.createElement('div');
+            card.className = 'lesson-card';
+            card.innerHTML = `
+                <div>
+                    <strong>Урок №${lessonId}</strong>
+                    <div style="font-size: 14px; color: #666;">Питань у темі: ${lessonsObj[lessonId]}</div>
+                    <div style="font-size: 13px; color: #e84393; font-weight: bold; margin-top: 4px;">Результат: ${savedScore}</div>
+                </div>
+                <div>
+                    <button class="btn" style="padding: 6px 12px; font-size: 13px; margin-bottom: 5px; background: #e67e22;" onclick="event.stopPropagation(); openCheatSheet(${lessonId})">Шпаргалка 📋</button>
+                    <div style="text-align: right;"><span style="color: #e84393; font-weight: bold;">Розпочати ➔</span></div>
+                </div>
+            `;
+            card.onclick = () => startLesson(Number(lessonId), true);
+            listDiv.appendChild(card);
+        });
+    }
+
+    function openCheatSheet(lessonId) {
+        const cheatScreen = document.getElementById('cheat-screen');
+        const cheatContent = document.getElementById('cheat-content');
+        document.getElementById('cheat-title').innerText = `Шпаргалка: Урок №${lessonId} 📚`;
+        
+        areAnswersRevealed = false;
+        document.getElementById('toggle-answers-btn').innerText = "Показати відповіді 👀";
+
+        const lessonQ = allQuestions.filter(q => (q.lesson || 1) === lessonId);
+        cheatContent.innerHTML = '';
+
+        lessonQ.forEach((q, idx) => {
+            let answersHtml = '<ul style="margin: 5px 0; padding-left: 20px;">';
+            q.answers.forEach((ans, aIdx) => {
+                const isCorrect = aIdx === q.correct;
+                const style = isCorrect ? 'color: #27ae60; font-weight: bold;' : 'color: #333;';
+                answersHtml += `<li style="${style}">${ans}</li>`;
+            });
+            answersHtml += '</ul>';
+
+            let correctText = q.answers[q.correct] || "Не вказано";
+            let imgHtml = q.image ? `<div style="text-align: center; margin: 5px 0;"><img src="${q.image}" style="max-height: 120px; border-radius: 6px;"></div>` : '';
+
+            const itemDiv = document.createElement('div');
+            itemDiv.style.marginBottom = '15px';
+            itemDiv.style.padding = '10px';
+            itemDiv.style.background = '#f8f9fa';
+            itemDiv.style.borderRadius = '8px';
+            itemDiv.innerHTML = `
+                <strong>${idx + 1}. ${q.question}</strong>
+                ${imgHtml}
+                ${answersHtml}
+                <div class="cheat-answer">✅ Правильна відповідь: ${correctText}</div>
+                <div style="font-size: 13px; color: #666; margin-top: 5px;">Пояснення: ${q.comment || 'Відсутнє'}</div>
+            `;
+            cheatContent.appendChild(itemDiv);
+        });
+
+        document.getElementById('lessons-screen').classList.add('hidden');
+        cheatScreen.classList.remove('hidden');
+    }
+
+    function toggleAllCheatAnswers() {
+        areAnswersRevealed = !areAnswersRevealed;
+        const btn = document.getElementById('toggle-answers-btn');
+        const answersElements = document.querySelectorAll('.cheat-answer');
+        
+        if (areAnswersRevealed) {
+            btn.innerText = "Сховати відповіді 🙈";
+            answersElements.forEach(el => el.classList.add('revealed'));
+        } else {
+            btn.innerText = "Показати відповіді 👀";
+            answersElements.forEach(el => el.classList.remove('revealed'));
+        }
+    }
+
+    function startLesson(lessonId, saveToStorage = true) {
+        currentLessonId = lessonId;
+        if (saveToStorage) {
+            localStorage.setItem('pdr_lesson', lessonId);
+        }
+        
+        currentLessonQuestions = allQuestions.filter(q => (q.lesson || 1) === lessonId);
+        currentIndex = 0;
+        correctAnswersCount = 0;
+
+        document.getElementById('role-screen').classList.add('hidden');
+        document.getElementById('lessons-screen').classList.add('hidden');
+        document.getElementById('cheat-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        document.getElementById('lesson-title').innerText = `Урок №${lessonId} (${currentRole === 'dania' ? 'Даня' : 'Настя'})`;
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const q = currentLessonQuestions[currentIndex];
+        document.getElementById('question-text').innerText = `${currentIndex + 1}. ${q.question}`;
+        
+        const imgContainer = document.getElementById('question-image-container');
+        if (q.image && q.image.trim() !== "") {
+            imgContainer.innerHTML = `<img src="${q.image}" alt="Схема до питання" style="max-width: 100%; max-height: 220px; border-radius: 8px; border: 1px solid #ddd;">`;
+            imgContainer.style.display = 'block';
+        } else {
+            imgContainer.innerHTML = '';
+            imgContainer.style.display = 'none';
+        }
+        
+        const list = document.getElementById('answers-list');
+        list.innerHTML = '';
+        selectedAnswerIndex = null;
+        document.getElementById('submit-btn').disabled = true;
+        document.getElementById('quiz-screen').style.display = 'block';
+        document.getElementById('result-box').style.display = 'none';
+
+        q.answers.forEach((ans, index) => {
+            const li = document.createElement('li');
+            li.innerText = ans;
+            li.onclick = () => selectAnswer(index, li);
+            list.appendChild(li);
+        });
+    }
+
+    function selectAnswer(index, element) {
+        document.querySelectorAll('.answers-list li').forEach(el => el.classList.remove('selected'));
+        element.classList.add('selected');
+        selectedAnswerIndex = index;
+        document.getElementById('submit-btn').disabled = false;
+    }
+
+    async function submitAnswer() {
+        const q = currentLessonQuestions[currentIndex];
+        const res = await fetch('/api/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ questionId: q.id, answerIndex: selectedAnswerIndex, role: currentRole })
+        });
+        const data = await res.json();
+
+        if (data.isCorrect) {
+            correctAnswersCount++;
+        }
+
+        const resultBox = document.getElementById('result-box');
+        const resultTitle = document.getElementById('result-title');
+        const resultComment = document.getElementById('result-comment');
+        const hamsterContainer = document.getElementById('hamster-container');
+        const nextBtn = document.getElementById('next-question-btn');
+
+        document.getElementById('quiz-screen').style.display = 'none';
+        resultBox.style.display = 'block';
+        hamsterContainer.innerHTML = '';
+
+        const isLastQuestion = currentIndex >= currentLessonQuestions.length - 1;
+
+        if (isLastQuestion) {
+            nextBtn.innerText = "Завершити урок 🎉";
+        } else {
+            nextBtn.innerText = "Наступне питання ➔";
+        }
+
+        if (data.isCorrect) {
+            resultBox.className = 'correct';
+            resultTitle.innerText = 'Правильно! 🎉 Хомяк задоволений!';
+            hamsterContainer.innerHTML = `<img src="/happy.jpg" class="hamster-img" alt="Happy Hamster">`;
+        } else {
+            resultBox.className = 'incorrect';
+            resultTitle.innerText = 'Помилка ❌ Хомяк сумує...';
+            hamsterContainer.innerHTML = `<img src="/sad.jpg" class="hamster-img" alt="Sad Hamster">`;
+        }
+        
+        resultComment.innerHTML = data.comment;
+    }
+
+    function loadNextQuestion() {
+        currentIndex++;
+        if (currentIndex >= currentLessonQuestions.length) {
+            const total = currentLessonQuestions.length;
+            const percent = Math.round((correctAnswersCount / total) * 100);
+            
+            localStorage.setItem(`pdr_score_${currentRole}_${currentLessonId}`, `${percent}%`);
+
+            const resultBox = document.getElementById('result-box');
+            resultBox.className = 'correct';
+            
+            // Виправляємо рід: для Насті — здобула, для Дані — здобув
+            const verb = currentRole === 'nastia' ? 'здобула' : 'здобув';
+
+            let message = `<h2>Урок завершено! 🏆</h2><p>Правильних відповідей: <b>${correctAnswersCount} з ${total}</b> (${percent}%)</p>`;
+
+            if (percent >= 90) {
+                message += `<div style="background: #fff3cd; padding: 15px; border-radius: 8px; border: 2px dashed #ffc107; margin-top: 15px;">
+                    <h3 style="color: #856404; margin-bottom: 5px;">🌟 Вітання! Набрано понад 90%! 🌟</h3>
+                    <p style="color: #856404;">Ти ${verb} право загадати бажання! Запиши його сюди:</p>
+                    <input type="text" id="user-wish" placeholder="Наприклад: Хочу піцу або кіно..." style="width: 80%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; margin-bottom: 10px;">
+                    <br><button class="btn btn-nastia" onclick="sendWish()">Надіслати бажання 🎁</button>
+                </div>`;
+            } else {
+                message += `<p>Для здобуття призового бажання треба набрати 90% і більше. Спробуй ще раз!</p>`;
+            }
+            message += `<button class="btn" style="margin-top: 15px;" onclick="showLessonsScreen()">До списку уроків</button>`;
+            
+            resultBox.innerHTML = message;
+        } else {
+            showQuestion();
+        }
+    }
+
+    async function sendWish() {
+        const wishInput = document.getElementById('user-wish');
+        const wishText = wishInput ? wishInput.value.trim() : "";
+        
+        if (!wishText) {
+            alert('Будь ласка, введи своє бажання!');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/wishes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: currentRole, wish: wishText })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('Бажання успішно загадано і збережено на сервері! ❤️');
+                wishInput.disabled = true;
+            } else {
+                alert('Помилка при збереженні бажання.');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Помилка зв\'язку з сервером!');
+        }
+    }
+
+    init();
+</script>
+
+</body>
+</html>
