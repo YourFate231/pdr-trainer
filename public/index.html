@@ -4,12 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ПДД Тренажер ❤️</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
+        * { box-sizing: border-box; }
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(90deg, #ff9a9e 0%, #fecfef 50%, #a1c4fd 100%);
+            font-family: 'Nunito', Arial, sans-serif;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 45%, #a1c4fd 100%);
+            background-attachment: fixed;
             margin: 0;
-            padding: 20px;
+            padding: 24px 16px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -17,120 +22,164 @@
         }
 
         .container {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            max-width: 650px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(6px);
+            padding: 34px;
+            border-radius: 22px;
+            box-shadow: 0 20px 45px rgba(80, 40, 90, 0.18);
+            max-width: 680px;
             width: 100%;
+            animation: fadeIn 0.35s ease;
         }
 
-        h2, h3 { color: #333; margin-top: 0; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2, h3 { color: #2d2540; margin-top: 0; font-weight: 800; }
+        p { color: #4a4458; }
+
         .btn {
-            background-color: #3498db;
+            background: linear-gradient(135deg, #4facfe 0%, #3498db 100%);
             color: white;
             border: none;
-            padding: 12px 20px;
+            padding: 14px 20px;
             font-size: 16px;
-            border-radius: 8px;
+            font-weight: 700;
+            font-family: inherit;
+            border-radius: 14px;
             cursor: pointer;
             width: 100%;
             text-align: center;
             margin-top: 15px;
             text-decoration: none;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+            box-shadow: 0 6px 16px rgba(52, 152, 219, 0.3);
         }
-        .btn:hover { background-color: #2980b9; }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 10px 22px rgba(52, 152, 219, 0.38); }
+        .btn:active { transform: translateY(0); }
 
-        .btn-nastia { background-color: #e84393; }
-        .btn-nastia:hover { background-color: #d63031; }
+        .btn-nastia { background: linear-gradient(135deg, #ff9fc4 0%, #e84393 100%); box-shadow: 0 6px 16px rgba(232, 67, 147, 0.32); }
+        .btn-dania { background: linear-gradient(135deg, #63b3f5 0%, #0984e3 100%); box-shadow: 0 6px 16px rgba(9, 132, 227, 0.32); }
+        .btn-muted { background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%); box-shadow: 0 6px 16px rgba(100, 116, 139, 0.28); }
 
-        .btn-dania { background-color: #0984e3; }
-        .btn-dania:hover { background-color: #0070c0; }
-        
         .lesson-card {
             background: #fff;
-            border: 2px solid #e0e0e0;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 14px;
+            border: 1px solid #f0e6ee;
+            padding: 18px;
+            border-radius: 18px;
+            margin-bottom: 16px;
+            box-shadow: 0 6px 18px rgba(90, 60, 100, 0.08);
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
         }
+        .lesson-card:hover { box-shadow: 0 10px 26px rgba(90, 60, 100, 0.14); }
         .lesson-card-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
         }
-        .lesson-info { cursor: pointer; }
-        .lesson-info:hover { opacity: 0.7; }
+        .lesson-info { cursor: pointer; flex: 1; min-width: 160px; }
+        .lesson-info:hover .lesson-info-title { color: #e84393; }
+        .lesson-info-title { font-size: 17px; font-weight: 800; color: #2d2540; transition: color 0.15s ease; }
+        .lesson-meta { font-size: 13.5px; color: #7a7488; margin-top: 4px; }
+        .lesson-score { font-size: 13.5px; color: #e84393; font-weight: 700; margin-top: 6px; }
+
+        .score-bar-track {
+            width: 100%;
+            height: 7px;
+            border-radius: 6px;
+            background: #f1e8ee;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+
         .lesson-actions {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
             align-items: stretch;
-            min-width: 130px;
+            min-width: 140px;
         }
+        .lesson-actions .btn { margin-top: 0; padding: 9px 14px; font-size: 13.5px; }
+        .btn-cheat { background: linear-gradient(135deg, #ffc46b 0%, #e67e22 100%); box-shadow: 0 6px 14px rgba(230, 126, 34, 0.3); }
+
         .wish-section {
-            margin-top: 12px;
-            padding-top: 10px;
-            border-top: 1px dashed #e0e0e0;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px dashed #ece2ea;
         }
         .wish-badge {
             font-size: 12.5px;
-            font-weight: bold;
-            padding: 6px 10px;
-            border-radius: 6px;
-            margin-bottom: 8px;
+            font-weight: 700;
+            padding: 7px 12px;
+            border-radius: 999px;
+            margin-bottom: 10px;
             display: inline-block;
         }
-        .wish-badge.earned { background: #d4edda; color: #155724; }
-        .wish-badge.locked { background: #fff3cd; color: #856404; }
+        .wish-badge.earned { background: #d9f7e6; color: #14804a; }
+        .wish-badge.locked { background: #fff2d6; color: #9a6b0a; }
         .wish-row { display: flex; gap: 8px; }
         .wish-input {
             flex: 1;
-            padding: 8px 10px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-            font-size: 13px;
-            box-sizing: border-box;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1.5px solid #ecdff0;
+            font-size: 13.5px;
             font-family: inherit;
+            background: #fbf7fa;
+            transition: border-color 0.15s ease;
         }
-        .wish-btn { width: auto; padding: 8px 14px; margin: 0; background: #e84393; white-space: nowrap; }
-        .wish-btn:hover { background: #d63031; }
-        .wish-saved-msg { display: block; font-size: 12px; margin-top: 6px; min-height: 14px; }
+        .wish-input:focus { outline: none; border-color: #e84393; background: #fff; }
+        .wish-btn { width: auto; padding: 10px 16px; margin: 0; background: linear-gradient(135deg, #ff9fc4 0%, #e84393 100%); white-space: nowrap; box-shadow: 0 6px 14px rgba(232, 67, 147, 0.3); }
+        .wish-saved-msg { display: block; font-size: 12px; margin-top: 7px; min-height: 14px; font-weight: 700; }
 
-        .question-box { margin-bottom: 15px; font-size: 18px; font-weight: bold; color: #2c3e50; }
-        .answers-list { list-style: none; padding: 0; }
+        .question-box { margin-bottom: 18px; font-size: 19px; font-weight: 800; color: #2d2540; line-height: 1.4; }
+        .answers-list { list-style: none; padding: 0; margin: 0; }
         .answers-list li {
             margin-bottom: 10px;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
+            padding: 14px 16px;
+            border: 2px solid #f0e6ee;
+            border-radius: 14px;
             cursor: pointer;
             background: #fff;
+            font-size: 15px;
+            transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
         }
-        .answers-list li:hover { background-color: #f8f9fa; border-color: #3498db; }
-        .answers-list li.selected { background-color: #ebf5fb; border-color: #3498db; font-weight: bold; }
-        
+        .answers-list li:hover { background-color: #fdf5f9; border-color: #f5b9d3; transform: translateX(2px); }
+        .answers-list li.selected { background-color: #fdeef5; border-color: #e84393; font-weight: 700; }
+
         #result-box {
             margin-top: 20px;
-            padding: 20px;
-            border-radius: 12px;
+            padding: 22px;
+            border-radius: 18px;
             display: none;
         }
-        .correct-box { background-color: #d4edda; color: #155724; border: 2px solid #c3e6cb; }
-        .incorrect-box { background-color: #f8d7da; color: #721c24; border: 2px solid #f5c6cb; }
-        
+        .correct-box { background-color: #e3f9ec; color: #14804a; border: 2px solid #b9ecce; }
+        .incorrect-box { background-color: #fdecec; color: #b93a3a; border: 2px solid #f6c6c6; }
+
         .hamster-img {
-            width: 90px;
-            height: 90px;
+            width: 96px;
+            height: 96px;
             object-fit: cover;
             border-radius: 50%;
-            margin: 10px auto;
-            border: 3px solid white;
+            margin: 12px auto;
+            border: 4px solid white;
             display: block;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
         }
         .hidden { display: none !important; }
-        .ans-item.revealed-correct { color: #27ae60; font-weight: bold; }
+        .ans-item.revealed-correct { color: #14804a; font-weight: 700; }
+
+        #lesson-final-box { text-align: center; }
+        #lesson-final-box h2 { margin-bottom: 6px; }
     </style>
 </head>
 <body>
@@ -148,7 +197,7 @@
     <div id="lessons-screen" class="hidden">
         <h2 id="lessons-greeting">Обери урок ❤️</h2>
         <div id="lessons-list">Завантаження уроків...</div>
-        <button class="btn" style="background: #636e72;" onclick="goHome()">Змінити користувача</button>
+        <button class="btn btn-muted" onclick="goHome()">Змінити користувача</button>
     </div>
 
     <div id="quiz-screen" class="hidden">
@@ -157,25 +206,25 @@
         <div id="question-image-container" style="margin-bottom: 15px; text-align: center; display: none;"></div>
         <ul class="answers-list" id="answers-list"></ul>
         <button class="btn" id="submit-btn" onclick="submitAnswer()" disabled>Відповісти</button>
-        <button class="btn" style="background: #636e72;" onclick="showLessonsScreen()">До списку уроків</button>
+        <button class="btn btn-muted" onclick="showLessonsScreen()">До списку уроків</button>
     </div>
 
     <div id="result-box">
         <h3 id="result-title" style="text-align: center; margin-bottom: 5px;"></h3>
         <div id="hamster-container"></div>
-        <p id="result-comment" style="background: rgba(255,255,255,0.7); padding: 10px; border-radius: 6px; margin: 10px 0;"></p>
+        <p id="result-comment" style="background: rgba(255,255,255,0.7); padding: 12px 14px; border-radius: 12px; margin: 12px 0;"></p>
         <button class="btn" id="next-question-btn" onclick="loadNextQuestion()">Наступне питання</button>
     </div>
 
-    <div id="lesson-final-box" class="hidden correct-box" style="margin-top: 20px; padding: 20px; border-radius: 12px;"></div>
+    <div id="lesson-final-box" class="hidden correct-box" style="margin-top: 20px; padding: 22px; border-radius: 18px;"></div>
 
     <div id="cheat-screen" class="hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
             <h3 id="cheat-title" style="margin: 0;">Шпаргалка 📚</h3>
-            <button class="btn" id="toggle-answers-btn" style="width: auto; padding: 8px 12px; background: #e67e22; margin: 0;" onclick="toggleAllCheatAnswers()">Показати відповіді 👀</button>
+            <button class="btn btn-cheat" style="width: auto; padding: 10px 14px; margin: 0;" onclick="toggleAllCheatAnswers()" id="toggle-answers-btn">Показати відповіді 👀</button>
         </div>
         <div id="cheat-content" style="max-height: 400px; overflow-y: auto; text-align: left; margin-bottom: 15px; padding-right: 5px;"></div>
-        <button class="btn" onclick="showLessonsScreen()">Назад до списку уроків</button>
+        <button class="btn btn-muted" onclick="showLessonsScreen()">Назад до списку уроків</button>
     </div>
 </div>
 
@@ -199,7 +248,7 @@
         img.alt = alt;
         img.className = 'hamster-img';
         img.onerror = () => {
-            container.innerHTML = `<div style="text-align:center;font-size:30px;">${fallbackEmoji}</div>`;
+            container.innerHTML = `<div style="text-align:center;font-size:34px;">${fallbackEmoji}</div>`;
         };
         container.appendChild(img);
     }
@@ -226,7 +275,7 @@
         try {
             const res = await fetch('/api/admin/questions');
             allQuestions = await res.json();
-            
+
             const savedRole = localStorage.getItem('pdr_role');
             if (savedRole) {
                 currentRole = savedRole;
@@ -258,7 +307,7 @@
         document.getElementById('result-box').style.display = 'none';
         document.getElementById('lesson-final-box').classList.add('hidden');
         document.getElementById('lessons-screen').classList.remove('hidden');
-        
+
         const greeting = document.getElementById('lessons-greeting');
         greeting.innerText = currentRole === 'dania' ? "Обери урок, Даня (Режим тренування) 🛠️" : "Обери урок, Настя ❤️";
         renderLessons();
@@ -300,40 +349,51 @@
             const rawScore = localStorage.getItem(`pdr_score_${currentRole}_${lessonId}`);
             const percent = rawScore ? parseInt(rawScore, 10) : null;
             const savedScoreText = rawScore || 'Ще не пройдено';
+            const isUnlocked = percent !== null && percent >= 90;
 
             let badgeHtml;
-            if (percent !== null && percent >= 90) {
+            let wishRowHtml = '';
+
+            if (isUnlocked) {
                 badgeHtml = `<div class="wish-badge earned">✓ Заслужено! 🎉</div>`;
+                // Форму бажання показуємо ЛИШЕ після успішного проходження уроку (90%+) —
+                // до того вона прихована, щоб не можна було вписати бажання "наперед".
+                const existingWish = allWishes.find(w => w.role === currentRole && Number(w.lesson) === lessonId);
+                const wishValue = existingWish ? existingWish.wish : '';
+                wishRowHtml = `
+                    <div class="wish-row">
+                        <input type="text" class="wish-input" id="wish-input-${lessonId}" placeholder="Бажання чи подарунок до цього уроку..." value="${escapeAttr(wishValue)}">
+                        <button class="btn wish-btn" onclick="saveWish(${lessonId})">💌 Зберегти</button>
+                    </div>
+                    <span class="wish-saved-msg" id="wish-msg-${lessonId}"></span>
+                `;
             } else if (percent !== null) {
                 badgeHtml = `<div class="wish-badge locked">Потрібно 90%+, щоб розблокувати бонус (поточний результат: ${percent}%) 🎯</div>`;
             } else {
                 badgeHtml = `<div class="wish-badge locked">Пройди тест на 90%+, щоб розблокувати бонус 🎯</div>`;
             }
 
-            const existingWish = allWishes.find(w => w.role === currentRole && Number(w.lesson) === lessonId);
-            const wishValue = existingWish ? existingWish.wish : '';
+            const barColor = percent === null ? '#e2d5e0' : (percent >= 90 ? '#27ae60' : '#e84393');
+            const barWidth = percent === null ? 0 : percent;
 
             const card = document.createElement('div');
             card.className = 'lesson-card';
             card.innerHTML = `
                 <div class="lesson-card-content">
                     <div class="lesson-info" onclick="startLesson(${lessonId})">
-                        <strong>Урок №${lessonId}</strong>
-                        <div style="font-size: 14px; color: #666;">Питань: ${lessonsObj[lessonId]}</div>
-                        <div style="font-size: 13px; color: #e84393; font-weight: bold; margin-top: 4px;">Результат: ${savedScoreText}</div>
+                        <div class="lesson-info-title">Урок №${lessonId}</div>
+                        <div class="lesson-meta">Питань: ${lessonsObj[lessonId]}</div>
+                        <div class="lesson-score">Результат: ${savedScoreText}</div>
+                        <div class="score-bar-track"><div class="score-bar-fill" style="width:${barWidth}%; background:${barColor};"></div></div>
                     </div>
                     <div class="lesson-actions">
-                        <button class="btn" style="padding: 6px 12px; font-size: 13px; background: #e67e22;" onclick="openCheatSheet(${lessonId})">Шпаргалка 📋</button>
-                        <button class="btn" style="padding: 6px 12px; font-size: 13px; background: #e84393;" onclick="startLesson(${lessonId})">Розпочати ➔</button>
+                        <button class="btn btn-cheat" onclick="openCheatSheet(${lessonId})">Шпаргалка 📋</button>
+                        <button class="btn btn-nastia" onclick="startLesson(${lessonId})">Розпочати ➔</button>
                     </div>
                 </div>
                 <div class="wish-section">
                     ${badgeHtml}
-                    <div class="wish-row">
-                        <input type="text" class="wish-input" id="wish-input-${lessonId}" placeholder="Бажання чи подарунок до цього уроку..." value="${escapeAttr(wishValue)}">
-                        <button class="btn wish-btn" onclick="saveWish(${lessonId})">💌 Зберегти</button>
-                    </div>
-                    <span class="wish-saved-msg" id="wish-msg-${lessonId}"></span>
+                    ${wishRowHtml}
                 </div>
             `;
             listDiv.appendChild(card);
@@ -377,7 +437,7 @@
         const cheatScreen = document.getElementById('cheat-screen');
         const cheatContent = document.getElementById('cheat-content');
         document.getElementById('cheat-title').innerText = `Шпаргалка: Урок №${lessonId} 📚`;
-        
+
         areAnswersRevealed = false;
         document.getElementById('toggle-answers-btn').innerText = "Показати відповіді 👀";
 
@@ -416,7 +476,7 @@
         areAnswersRevealed = !areAnswersRevealed;
         const btn = document.getElementById('toggle-answers-btn');
         const ansItems = document.querySelectorAll('.ans-item');
-        
+
         if (areAnswersRevealed) {
             btn.innerText = "Сховати відповіді 🙈";
             ansItems.forEach(el => {
@@ -437,7 +497,7 @@
     function startLesson(lessonId) {
         currentLessonId = lessonId;
         localStorage.setItem('pdr_lesson', lessonId);
-        
+
         currentLessonQuestions = allQuestions.filter(q => (q.lesson || 1) === lessonId);
         currentIndex = 0;
         correctAnswersCount = 0;
@@ -460,7 +520,7 @@
 
         const q = currentLessonQuestions[currentIndex];
         document.getElementById('question-text').innerText = `${currentIndex + 1}. ${q.question}`;
-        
+
         const imgContainer = document.getElementById('question-image-container');
         if (q.image && q.image.trim() !== "") {
             imgContainer.innerHTML = `<img src="${q.image}" alt="Схема" style="max-width: 100%; max-height: 220px; border-radius: 8px;">`;
@@ -469,11 +529,11 @@
             imgContainer.innerHTML = '';
             imgContainer.style.display = 'none';
         }
-        
+
         const list = document.getElementById('answers-list');
         list.innerHTML = '';
         selectedAnswerIndex = null;
-        
+
         document.getElementById('submit-btn').disabled = true;
         document.getElementById('quiz-screen').style.display = 'block';
         document.getElementById('result-box').style.display = 'none';
@@ -510,7 +570,7 @@
         }).catch(e => console.error(e));
 
         document.getElementById('quiz-screen').style.display = 'none';
-        
+
         const resultBox = document.getElementById('result-box');
         const resultTitle = document.getElementById('result-title');
         const resultComment = document.getElementById('result-comment');
@@ -518,7 +578,7 @@
         const nextBtn = document.getElementById('next-question-btn');
 
         resultBox.style.display = 'block';
-        
+
         const isLast = currentIndex >= currentLessonQuestions.length - 1;
         nextBtn.innerText = isLast ? "Завершити урок 🎉" : "Наступне питання ➔";
 
@@ -556,15 +616,15 @@
             const finalBox = document.getElementById('lesson-final-box');
             finalBox.classList.remove('hidden');
 
-            let message = `<h2 style="text-align:center;">Урок завершено! 🏆</h2><p style="text-align:center;">Правильних відповідей: <b>${correctAnswersCount} з ${total}</b> (${percent}%)</p>`;
+            let message = `<h2>Урок завершено! 🏆</h2><p>Правильних відповідей: <b>${correctAnswersCount} з ${total}</b> (${percent}%)</p>`;
 
             if (percent >= 90) {
-                message += `<p style="text-align:center; color: #27ae60; font-weight: bold;">🌟 Понад 90%! Заглянь у список уроків — там з'явилась позначка "Заслужено", і туди можна вписати бажання 🎁</p>`;
+                message += `<p style="color: #27ae60; font-weight: bold;">🌟 Понад 90%! Заглянь у список уроків — там з'явилась позначка "Заслужено" і форма для бажання 🎁</p>`;
             } else {
-                message += `<p style="text-align:center;">Для позначки "Заслужено" треба набрати 90% і більше. Спробуй ще раз!</p>`;
+                message += `<p>Для позначки "Заслужено" і форми бажання треба набрати 90% і більше. Спробуй ще раз!</p>`;
             }
 
-            message += `<button class="btn" style="margin-top: 15px;" onclick="showLessonsScreen()">До списку уроків</button>`;
+            message += `<button class="btn" onclick="showLessonsScreen()">До списку уроків</button>`;
             finalBox.innerHTML = message;
         }
     }
