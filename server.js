@@ -15,7 +15,9 @@ if (!MONGODB_URI) {
 }
 
 app.use(cors());
-app.use(express.json());
+// Ліміт піднятий, бо масовий імпорт бази питань (JSON з картинками у base64)
+// може бути важчим за дефолтні 100kb.
+app.use(express.json({ limit: '25mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Картинки зберігаємо прямо в MongoDB як base64 data URI (multer тримає файл у пам'яті,
@@ -43,6 +45,7 @@ async function connectDB() {
 const questionsCol = () => db.collection('questions');
 const wishesCol = () => db.collection('wishes');
 const statsCol = () => db.collection('stats');
+const scoresCol = () => db.collection('scores');
 
 // Прибираємо службове поле _id перед відправкою на фронт (фронт і адмінка
 // звикли працювати з власним числовим полем id)
@@ -166,6 +169,58 @@ app.delete('/api/admin/wishes', async (req, res) => {
     }
 });
 
+// Результати проходження уроків (у %) — зберігаються на сервері, а не лише
+// в localStorage браузера. Це важливо: якщо тримати результат тільки в
+// localStorage, то на новому пристрої/у іншому браузері прогрес завжди
+// виглядатиме "не пройдено", а стара локальна кеш-копія в браузері може
+// показувати застарілий результат навіть після скидання бази на сервері.
+// Тому сервер тепер є єдиним джерелом правди для прогресу.
+app.get('/api/admin/scores', async (req, res) => {
+    try {
+        const scores = await scoresCol().find().toArray();
+        res.json(scores.map(clean));
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Помилка сервера' });
+    }
+});
+
+app.post('/api/scores', async (req, res) => {
+    try {
+        const { role, lesson, percent } = req.body;
+        const safeRole = role || 'nastia';
+        const safeLesson = Number(lesson) || 1;
+        const safePercent = Number(percent) || 0;
+
+        await scoresCol().updateOne(
+            { role: safeRole, lesson: safeLesson },
+            { $set: {
+                role: safeRole,
+                lesson: safeLesson,
+                percent: safePercent,
+                timestamp: new Date().toISOString()
+            } },
+            { upsert: true }
+        );
+
+        res.json({ success: true });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Помилка сервера' });
+    }
+});
+
+// Скидання прогресу (усіх результатів проходження) — корисно перед "чистим" повторним запуском
+app.delete('/api/admin/scores', async (req, res) => {
+    try {
+        await scoresCol().deleteMany({});
+        res.json({ success: true, message: 'Прогрес скинуто' });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Помилка сервера' });
+    }
+});
+
 // Статистика для адмінки
 app.get('/api/admin/stats', async (req, res) => {
     try {
@@ -268,6 +323,92 @@ app.delete('/api/admin/questions/:id', async (req, res) => {
     } catch (e) {
         console.error(e);
         res.status(500).json({ error: 'Помилка сервера' });
+    }
+});
+
+// Масовий імпорт бази питань з JSON-файлу (замінює ручне додавання питання
+// за питанням через форму). Формат тіла запиту:
+// {
+//   "replaceAll": false,          // true — спочатку видалити всю поточну базу питань
+//   "lessons": [
+//     {
+//       "lesson": 1,
+//       "topic": "Дорожні знаки",  // необов'язково, лише для зручності при заповненні файлу
+//       "questions": [
+//         {
+//           "question": "Текст питання",
+//           "image": "",           // URL картинки або порожній рядок
+//           "answers": ["Варіант 1", "Варіант 2", "Варіант 3"],
+//           "correct": 0,          // індекс правильної відповіді (з 0)
+//           "comment": "Пояснення чому саме ця відповідь правильна",
+//           "rule": "п. 10.1 ПДР", // необов'язково
+//           "ruleLink": "https://zakon.rada.gov.ua/laws/show/1306-2001-п#n123" // необов'язково
+//         }
+//       ]
+//     }
+//   ]
+// }
+app.post('/api/admin/questions/import', async (req, res) => {
+    try {
+        const { replaceAll, lessons } = req.body;
+
+        if (!Array.isArray(lessons)) {
+            return res.status(400).json({ error: 'Очікується поле "lessons" (масив уроків із питаннями)' });
+        }
+
+        let nextId = 1;
+        if (!replaceAll) {
+            const last = await questionsCol().find().sort({ id: -1 }).limit(1).toArray();
+            nextId = last.length > 0 ? last[0].id + 1 : 1;
+        }
+
+        const newQuestions = [];
+        for (const lessonBlock of lessons) {
+            const lessonNum = Number(lessonBlock.lesson) || 1;
+            const questions = Array.isArray(lessonBlock.questions) ? lessonBlock.questions : [];
+
+            for (const q of questions) {
+                if (!q.question || !Array.isArray(q.answers) || q.answers.length === 0) {
+                    continue; // пропускаємо биті записи, а не валимо весь імпорт
+                }
+
+                // Якщо вказано пункт ПДР (rule) і/або посилання на закон (ruleLink) —
+                // вшиваємо номер пункту як клікабельне посилання прямо в пояснення,
+                // за тим самим форматом, що й кнопка "Вставити посилання на ПДР" в адмінці.
+                let comment = q.comment || '';
+                if (q.ruleLink) {
+                    const linkText = q.rule || 'пункт ПДР';
+                    const link = `<a href='${q.ruleLink}' target='_blank'>${linkText}</a>`;
+                    comment = comment ? `${comment} (${link})` : `Згідно з ${link}.`;
+                } else if (q.rule) {
+                    comment = comment ? `${comment} (${q.rule})` : `Згідно з ${q.rule}.`;
+                }
+
+                newQuestions.push({
+                    id: nextId++,
+                    lesson: lessonNum,
+                    question: q.question,
+                    image: q.image || "",
+                    answers: q.answers,
+                    correct: Number(q.correct) || 0,
+                    comment: comment || "Офіційне пояснення відсутнє."
+                });
+            }
+        }
+
+        if (newQuestions.length === 0) {
+            return res.status(400).json({ error: 'У файлі не знайдено жодного коректного питання' });
+        }
+
+        if (replaceAll) {
+            await questionsCol().deleteMany({});
+        }
+        await questionsCol().insertMany(newQuestions);
+
+        res.json({ success: true, imported: newQuestions.length, replacedAll: !!replaceAll });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Помилка імпорту' });
     }
 });
 
