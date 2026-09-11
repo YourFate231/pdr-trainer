@@ -167,6 +167,8 @@
         <button class="btn" id="next-question-btn" onclick="loadNextQuestion()">Наступне питання</button>
     </div>
 
+    <div id="lesson-final-box" class="hidden correct-box" style="margin-top: 20px; padding: 20px; border-radius: 12px;"></div>
+
     <div id="cheat-screen" class="hidden">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <h3 id="cheat-title" style="margin: 0;">Шпаргалка 📚</h3>
@@ -187,6 +189,20 @@
     let currentRole = 'nastia';
     let correctAnswersCount = 0;
     let areAnswersRevealed = false;
+
+    // Малюємо картинку хом'яка через звичайний DOM/JS onerror (а не через рядок з вкладеними
+    // лапками в innerHTML) — так набагато надійніше і без ризику зламати парсинг HTML/JS.
+    function renderHamster(container, src, alt, fallbackEmoji) {
+        container.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = alt;
+        img.className = 'hamster-img';
+        img.onerror = () => {
+            container.innerHTML = `<div style="text-align:center;font-size:30px;">${fallbackEmoji}</div>`;
+        };
+        container.appendChild(img);
+    }
 
     function escapeAttr(str) {
         return String(str || '')
@@ -232,6 +248,7 @@
         document.getElementById('quiz-screen').classList.add('hidden');
         document.getElementById('cheat-screen').classList.add('hidden');
         document.getElementById('result-box').style.display = 'none';
+        document.getElementById('lesson-final-box').classList.add('hidden');
     }
 
     function showLessonsScreen() {
@@ -239,6 +256,7 @@
         document.getElementById('quiz-screen').classList.add('hidden');
         document.getElementById('cheat-screen').classList.add('hidden');
         document.getElementById('result-box').style.display = 'none';
+        document.getElementById('lesson-final-box').classList.add('hidden');
         document.getElementById('lessons-screen').classList.remove('hidden');
         
         const greeting = document.getElementById('lessons-greeting');
@@ -429,10 +447,11 @@
         document.getElementById('lessons-screen').classList.add('hidden');
         document.getElementById('cheat-screen').classList.add('hidden');
         document.getElementById('result-box').style.display = 'none';
+        document.getElementById('lesson-final-box').classList.add('hidden');
 
         document.getElementById('quiz-screen').classList.remove('hidden');
         document.getElementById('lesson-title').innerText = `Урок №${lessonId} (${currentRole === 'dania' ? 'Даня' : 'Настя'})`;
-        
+
         showQuestion();
     }
 
@@ -458,6 +477,7 @@
         document.getElementById('submit-btn').disabled = true;
         document.getElementById('quiz-screen').style.display = 'block';
         document.getElementById('result-box').style.display = 'none';
+        document.getElementById('lesson-final-box').classList.add('hidden');
 
         q.answers.forEach((ans, index) => {
             const li = document.createElement('li');
@@ -505,13 +525,13 @@
         if (isCorrect) {
             resultBox.className = 'correct-box';
             resultTitle.innerText = 'Правильно! 🎉 Хом\'як задоволений!';
-            hamsterContainer.innerHTML = `<img src="/happy.jpg" class="hamster-img" alt="Happy" onerror="this.outerHTML='<div style=\'text-align:center;font-size:30px;\'>🌸</div>'">`;
+            renderHamster(hamsterContainer, '/happy.jpg', 'Happy', '🌸');
         } else {
             resultBox.className = 'incorrect-box';
             resultTitle.innerText = 'Помилка ❌ Хом\'як сумує...';
-            hamsterContainer.innerHTML = `<img src="/sad.jpg" class="hamster-img" alt="Sad" onerror="this.outerHTML='<div style=\'text-align:center;font-size:30px;\'>😢</div>'">`;
+            renderHamster(hamsterContainer, '/sad.jpg', 'Sad', '😢');
         }
-        
+
         resultComment.innerHTML = `<strong>Пояснення:</strong> ${commentText}`;
     }
 
@@ -526,8 +546,15 @@
 
             localStorage.setItem(`pdr_score_${currentRole}_${currentLessonId}`, `${percent}%`);
 
-            const resultBox = document.getElementById('result-box');
-            resultBox.className = 'correct-box';
+            // Ховаємо (а не перезаписуємо!) result-box — його внутрішні елементи
+            // (#result-title, #hamster-container, #result-comment, #next-question-btn)
+            // мають лишатись у DOM незмінними, бо вони перевикористовуються при
+            // кожному наступному проходженні уроку. Підсумок уроку показуємо в
+            // окремому блоці #lesson-final-box.
+            document.getElementById('result-box').style.display = 'none';
+
+            const finalBox = document.getElementById('lesson-final-box');
+            finalBox.classList.remove('hidden');
 
             let message = `<h2 style="text-align:center;">Урок завершено! 🏆</h2><p style="text-align:center;">Правильних відповідей: <b>${correctAnswersCount} з ${total}</b> (${percent}%)</p>`;
 
@@ -538,7 +565,7 @@
             }
 
             message += `<button class="btn" style="margin-top: 15px;" onclick="showLessonsScreen()">До списку уроків</button>`;
-            resultBox.innerHTML = message;
+            finalBox.innerHTML = message;
         }
     }
 
