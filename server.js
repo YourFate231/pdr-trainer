@@ -1,249 +1,283 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const { MongoClient } = require('mongodb');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+    console.error('❌ Не задано MONGODB_URI. Додай його в .env (локально) або в змінні середовища Render.');
+    process.exit(1);
+}
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Настройка хранилища для загружаемых картинок вопросов
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadDir = path.join(__dirname, 'public', 'uploads');
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
+// Картинки зберігаємо прямо в MongoDB як base64 data URI (multer тримає файл у пам'яті,
+// а не пише на диск) — інакше вони зникали б після кожного передеплою на Render,
+// бо файлова система там ephemeral.
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB на картинку
 });
-const upload = multer({ storage: storage });
 
-// Функція безпечного читання питань (захист від пустого/бинного файлу)
-const getQuestions = () => {
-    const qFile = path.join(__dirname, 'questions.json');
-    if (!fs.existsSync(qFile)) return [];
-    const data = fs.readFileSync(qFile, 'utf-8').trim();
-    if (data === "") return [];
-    try { return JSON.parse(data); } catch (e) { return []; }
-};
+function fileToDataUri(file) {
+    if (!file) return null;
+    return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+}
 
-// Функція безпечного читання бажань
-const getWishes = () => {
-    const wishFile = path.join(__dirname, 'wishes.json');
-    if (!fs.existsSync(wishFile)) return [];
-    const data = fs.readFileSync(wishFile, 'utf-8').trim();
-    if (data === "") return [];
-    try { return JSON.parse(data); } catch (e) { return []; }
+let db;
+const client = new MongoClient(MONGODB_URI);
+
+async function connectDB() {
+    await client.connect();
+    db = client.db('pdr_trainer');
+    console.log('✅ Підключено до MongoDB Atlas');
+}
+
+const questionsCol = () => db.collection('questions');
+const wishesCol = () => db.collection('wishes');
+const statsCol = () => db.collection('stats');
+
+// Прибираємо службове поле _id перед відправкою на фронт (фронт і адмінка
+// звикли працювати з власним числовим полем id)
+const clean = (doc) => {
+    if (!doc) return doc;
+    const { _id, ...rest } = doc;
+    return rest;
 };
 
 // Отдаем список вопросов для тренажера (без правильних відповідей)
-app.get('/api/questions', (req, res) => {
-    const questions = getQuestions();
-    const safeQuestions = questions.map(q => ({
-        id: q.id,
-        lesson: q.lesson,
-        question: q.question,
-        image: q.image || "",
-        answers: q.answers
-    }));
-    res.json(safeQuestions);
+app.get('/api/questions', async (req, res) => {
+    try {
+        const questions = await questionsCol().find().toArray();
+        const safeQuestions = questions.map(q => ({
+            id: q.id,
+            lesson: q.lesson,
+            question: q.question,
+            image: q.image || "",
+            answers: q.answers
+        }));
+        res.json(safeQuestions);
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Помилка сервера' });
+    }
 });
 
 // Отдаем повні питання (використовується і адмінкою, і фронтом учнів — авторизації в проєкті немає)
-app.get('/api/admin/questions', (req, res) => {
-    res.json(getQuestions());
+app.get('/api/admin/questions', async (req, res) => {
+    try {
+        const questions = await questionsCol().find().toArray();
+        res.json(questions.map(clean));
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Помилка сервера' });
+    }
 });
 
 // Приймаємо відповідь від учня (Насті чи Дані)
-app.post('/api/submit', (req, res) => {
-    const { questionId, answerIndex, role } = req.body;
-    const questions = getQuestions();
-    const q = questions.find(item => item.id === questionId);
+app.post('/api/submit', async (req, res) => {
+    try {
+        const { questionId, answerIndex, role } = req.body;
+        const q = await questionsCol().findOne({ id: questionId });
 
-    if (!q) {
-        return res.status(404).json({ error: 'Question not found' });
-    }
-
-    // Жорстке приведення до числа виключає баги з рядками/числами (особливо для індексу 0)
-    const isCorrect = Number(q.correct) === Number(answerIndex);
-
-    const logFile = path.join(__dirname, 'database.json');
-    let logs = [];
-    if (fs.existsSync(logFile)) {
-        const logData = fs.readFileSync(logFile, 'utf-8').trim();
-        if (logData !== "") {
-            try { logs = JSON.parse(logData); } catch (e) { logs = []; }
+        if (!q) {
+            return res.status(404).json({ error: 'Question not found' });
         }
+
+        // Жорстке приведення до числа виключає баги з рядками/числами (особливо для індексу 0)
+        const isCorrect = Number(q.correct) === Number(answerIndex);
+
+        await statsCol().insertOne({
+            timestamp: new Date().toISOString(),
+            role: role || 'nastia', // Фіксуємо, хто саме проходив тест
+            lesson: q.lesson || 1,
+            questionId,
+            answerIndex,
+            isCorrect
+        });
+
+        res.json({
+            isCorrect,
+            correctAnswer: q.correct,
+            comment: q.comment
+        });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Помилка сервера' });
     }
-
-    const attempt = {
-        timestamp: new Date().toISOString(),
-        role: role || 'nastia', // Фіксуємо, хто саме проходив тест
-        lesson: q.lesson || 1,
-        questionId,
-        answerIndex,
-        isCorrect
-    };
-    logs.push(attempt);
-    fs.writeFileSync(logFile, JSON.stringify(logs, null, 2), 'utf-8');
-
-    res.json({
-        isCorrect,
-        correctAnswer: q.correct,
-        comment: q.comment
-    });
 });
 
 // Список усіх загаданих бажань (потрібен і адмінці, і карткам уроків на головному екрані)
-app.get('/api/admin/wishes', (req, res) => {
-    res.json(getWishes());
+app.get('/api/admin/wishes', async (req, res) => {
+    try {
+        const wishes = await wishesCol().find().toArray();
+        res.json(wishes.map(clean));
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Помилка сервера' });
+    }
 });
 
 // Збереження/оновлення бажання, прив'язаного до ролі та конкретного уроку.
 // Повторне збереження для тієї самої пари (role, lesson) перезаписує попереднє значення —
 // поле бажання в картці уроку можна редагувати будь-коли.
-app.post('/api/wishes', (req, res) => {
-    const { role, wish, lesson } = req.body;
-    const wishFile = path.join(__dirname, 'wishes.json');
-    let wishes = getWishes();
+app.post('/api/wishes', async (req, res) => {
+    try {
+        const { role, wish, lesson } = req.body;
+        const safeRole = role || 'nastia';
+        const safeLesson = Number(lesson) || 1;
 
-    const safeRole = role || 'nastia';
-    const safeLesson = Number(lesson) || 1;
+        const newWishEntry = {
+            timestamp: new Date().toISOString(),
+            date: new Date().toLocaleDateString('uk-UA'),
+            role: safeRole,
+            lesson: safeLesson,
+            wish: wish || 'Без тексту'
+        };
 
-    const existingIndex = wishes.findIndex(w => w.role === safeRole && Number(w.lesson) === safeLesson);
+        await wishesCol().updateOne(
+            { role: safeRole, lesson: safeLesson },
+            { $set: newWishEntry },
+            { upsert: true }
+        );
 
-    const newWishEntry = {
-        timestamp: new Date().toISOString(),
-        date: new Date().toLocaleDateString('uk-UA'),
-        role: safeRole,
-        lesson: safeLesson,
-        wish: wish || 'Без тексту'
-    };
-
-    if (existingIndex !== -1) {
-        wishes[existingIndex] = newWishEntry;
-    } else {
-        wishes.push(newWishEntry);
+        res.json({ success: true, message: 'Бажання успішно збережено!' });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Помилка сервера' });
     }
-
-    fs.writeFileSync(wishFile, JSON.stringify(wishes, null, 2), 'utf-8');
-    res.json({ success: true, message: 'Бажання успішно збережено!' });
 });
 
 // Скидання (повне очищення) усіх бажань
-app.delete('/api/admin/wishes', (req, res) => {
-    const wishFile = path.join(__dirname, 'wishes.json');
-    fs.writeFileSync(wishFile, JSON.stringify([], null, 2), 'utf-8');
-    res.json({ success: true, message: 'Всі бажання успішно скинуто!' });
+app.delete('/api/admin/wishes', async (req, res) => {
+    try {
+        await wishesCol().deleteMany({});
+        res.json({ success: true, message: 'Всі бажання успішно скинуто!' });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Помилка сервера' });
+    }
 });
 
 // Статистика для адмінки
-app.get('/api/admin/stats', (req, res) => {
-    const logFile = path.join(__dirname, 'database.json');
-    if (!fs.existsSync(logFile)) return res.json([]);
-    const logData = fs.readFileSync(logFile, 'utf-8').trim();
-    if (logData === "") return res.json([]);
+app.get('/api/admin/stats', async (req, res) => {
     try {
-        res.json(JSON.parse(logData));
+        const logs = await statsCol().find().toArray();
+        res.json(logs.map(clean));
     } catch (e) {
-        res.json([]);
+        console.error(e);
+        res.status(500).json({ error: 'Помилка сервера' });
     }
 });
 
 // Очищення статистики
-app.delete('/api/admin/stats', (req, res) => {
-    const logFile = path.join(__dirname, 'database.json');
-    fs.writeFileSync(logFile, JSON.stringify([], null, 2), 'utf-8');
-    res.json({ success: true, message: 'Статистику очищено' });
+app.delete('/api/admin/stats', async (req, res) => {
+    try {
+        await statsCol().deleteMany({});
+        res.json({ success: true, message: 'Статистику очищено' });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Помилка сервера' });
+    }
 });
 
-// Додавання нового питання (із завантаженням картинки через multer)
-app.post('/api/admin/questions', upload.single('imageFile'), (req, res) => {
-    const qFile = path.join(__dirname, 'questions.json');
-    let questions = getQuestions();
+// Додавання нового питання (із завантаженням картинки через multer, зберігається як base64)
+app.post('/api/admin/questions', upload.single('imageFile'), async (req, res) => {
+    try {
+        let imagePath = req.body.image || "";
+        if (req.file) {
+            imagePath = fileToDataUri(req.file);
+        }
 
-    let imagePath = req.body.image || "";
-    if (req.file) {
-        imagePath = `/uploads/${req.file.filename}`;
+        let answersParsed = req.body.answers;
+        if (typeof answersParsed === 'string') {
+            try { answersParsed = JSON.parse(answersParsed); } catch (e) {}
+        }
+
+        const lastQuestion = await questionsCol().find().sort({ id: -1 }).limit(1).toArray();
+        const nextId = lastQuestion.length > 0 ? lastQuestion[0].id + 1 : 1;
+
+        const newQuestion = {
+            id: nextId,
+            lesson: Number(req.body.lesson) || 1,
+            question: req.body.question,
+            image: imagePath,
+            answers: answersParsed,
+            correct: Number(req.body.correct),
+            comment: req.body.comment || "Офіційне пояснення."
+        };
+
+        await questionsCol().insertOne(newQuestion);
+        res.json({ success: true, question: clean(newQuestion) });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Помилка сервера' });
     }
-
-    let answersParsed = req.body.answers;
-    if (typeof answersParsed === 'string') {
-        try { answersParsed = JSON.parse(answersParsed); } catch (e) {}
-    }
-
-    const newQuestion = {
-        id: questions.length > 0 ? Math.max(...questions.map(q => q.id)) + 1 : 1,
-        lesson: Number(req.body.lesson) || 1,
-        question: req.body.question,
-        image: imagePath,
-        answers: answersParsed,
-        correct: Number(req.body.correct),
-        comment: req.body.comment || "Офіційне пояснення."
-    };
-
-    questions.push(newQuestion);
-    fs.writeFileSync(qFile, JSON.stringify(questions, null, 2), 'utf-8');
-    res.json({ success: true, question: newQuestion });
 });
 
 // Редагування існуючого питання за ID
-app.put('/api/admin/questions/:id', upload.single('imageFile'), (req, res) => {
-    const qId = Number(req.params.id);
-    const qFile = path.join(__dirname, 'questions.json');
+app.put('/api/admin/questions/:id', upload.single('imageFile'), async (req, res) => {
+    try {
+        const qId = Number(req.params.id);
+        const existing = await questionsCol().findOne({ id: qId });
 
-    let questions = getQuestions();
-    const index = questions.findIndex(q => q.id === qId);
+        if (!existing) {
+            return res.status(404).json({ error: 'Question not found' });
+        }
 
-    if (index === -1) {
-        return res.status(404).json({ error: 'Question not found' });
+        let imagePath = existing.image;
+        if (req.file) {
+            imagePath = fileToDataUri(req.file);
+        }
+
+        let answersParsed = req.body.answers;
+        if (typeof answersParsed === 'string') {
+            try { answersParsed = JSON.parse(answersParsed); } catch (e) {}
+        }
+
+        const updatedFields = {
+            lesson: Number(req.body.lesson) || existing.lesson,
+            question: req.body.question || existing.question,
+            image: imagePath,
+            answers: answersParsed || existing.answers,
+            correct: req.body.correct !== undefined ? Number(req.body.correct) : existing.correct,
+            comment: req.body.comment !== undefined ? req.body.comment : existing.comment
+        };
+
+        await questionsCol().updateOne({ id: qId }, { $set: updatedFields });
+        res.json({ success: true, question: clean({ id: qId, ...updatedFields }) });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Помилка сервера' });
     }
-
-    let imagePath = questions[index].image;
-    if (req.file) {
-        imagePath = `/uploads/${req.file.filename}`;
-    }
-
-    let answersParsed = req.body.answers;
-    if (typeof answersParsed === 'string') {
-        try { answersParsed = JSON.parse(answersParsed); } catch (e) {}
-    }
-
-    questions[index] = {
-        id: qId,
-        lesson: Number(req.body.lesson) || questions[index].lesson,
-        question: req.body.question || questions[index].question,
-        image: imagePath,
-        answers: answersParsed || questions[index].answers,
-        correct: req.body.correct !== undefined ? Number(req.body.correct) : questions[index].correct,
-        comment: req.body.comment !== undefined ? req.body.comment : questions[index].comment
-    };
-
-    fs.writeFileSync(qFile, JSON.stringify(questions, null, 2), 'utf-8');
-    res.json({ success: true, question: questions[index] });
 });
 
 // Видалення питання за ID
-app.delete('/api/admin/questions/:id', (req, res) => {
-    const qId = Number(req.params.id);
-    const qFile = path.join(__dirname, 'questions.json');
-
-    let questions = getQuestions();
-    const filtered = questions.filter(q => q.id !== qId);
-
-    fs.writeFileSync(qFile, JSON.stringify(filtered, null, 2), 'utf-8');
-    res.json({ success: true, message: 'Питання видалено' });
+app.delete('/api/admin/questions/:id', async (req, res) => {
+    try {
+        const qId = Number(req.params.id);
+        await questionsCol().deleteOne({ id: qId });
+        res.json({ success: true, message: 'Питання видалено' });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Помилка сервера' });
+    }
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+connectDB()
+    .then(() => {
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
+    })
+    .catch(err => {
+        console.error('❌ Не вдалося підключитись до MongoDB:', err);
+        process.exit(1);
+    });
