@@ -52,14 +52,51 @@
             border: 2px solid #e0e0e0;
             padding: 15px;
             border-radius: 10px;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
+        }
+        .lesson-card-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            cursor: pointer;
         }
-        .lesson-card:hover { border-color: #e84393; background: #fff0f6; }
-        
+        .lesson-info { cursor: pointer; }
+        .lesson-info:hover { opacity: 0.7; }
+        .lesson-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: stretch;
+            min-width: 130px;
+        }
+        .wish-section {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px dashed #e0e0e0;
+        }
+        .wish-badge {
+            font-size: 12.5px;
+            font-weight: bold;
+            padding: 6px 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+        .wish-badge.earned { background: #d4edda; color: #155724; }
+        .wish-badge.locked { background: #fff3cd; color: #856404; }
+        .wish-row { display: flex; gap: 8px; }
+        .wish-input {
+            flex: 1;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-size: 13px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .wish-btn { width: auto; padding: 8px 14px; margin: 0; background: #e84393; white-space: nowrap; }
+        .wish-btn:hover { background: #d63031; }
+        .wish-saved-msg { display: block; font-size: 12px; margin-top: 6px; min-height: 14px; }
+
         .question-box { margin-bottom: 15px; font-size: 18px; font-weight: bold; color: #2c3e50; }
         .answers-list { list-style: none; padding: 0; }
         .answers-list li {
@@ -142,6 +179,7 @@
 
 <script>
     let allQuestions = [];
+    let allWishes = [];
     let currentLessonQuestions = [];
     let currentIndex = 0;
     let selectedAnswerIndex = null;
@@ -149,6 +187,24 @@
     let currentRole = 'nastia';
     let correctAnswersCount = 0;
     let areAnswersRevealed = false;
+
+    function escapeAttr(str) {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    async function fetchWishes() {
+        try {
+            const res = await fetch('/api/admin/wishes');
+            allWishes = await res.json();
+        } catch (e) {
+            console.error(e);
+            allWishes = [];
+        }
+    }
 
     async function init() {
         try {
@@ -202,14 +258,15 @@
 
     function goHome() { showRoleScreen(); }
 
-    function renderLessons() {
+    async function renderLessons() {
         const listDiv = document.getElementById('lessons-list');
-        listDiv.innerHTML = '';
 
         if (!allQuestions || allQuestions.length === 0) {
             listDiv.innerHTML = '<p style="color: red;">Питань не знайдено.</p>';
             return;
         }
+
+        await fetchWishes();
 
         const lessonsObj = {};
         allQuestions.forEach(q => {
@@ -218,24 +275,84 @@
             lessonsObj[lId]++;
         });
 
-        Object.keys(lessonsObj).forEach(lessonId => {
-            const savedScore = localStorage.getItem(`pdr_score_${currentRole}_${lessonId}`) || 'Ще не пройдено';
+        listDiv.innerHTML = '';
+
+        Object.keys(lessonsObj).sort((a, b) => Number(a) - Number(b)).forEach(lessonIdStr => {
+            const lessonId = Number(lessonIdStr);
+            const rawScore = localStorage.getItem(`pdr_score_${currentRole}_${lessonId}`);
+            const percent = rawScore ? parseInt(rawScore, 10) : null;
+            const savedScoreText = rawScore || 'Ще не пройдено';
+
+            let badgeHtml;
+            if (percent !== null && percent >= 90) {
+                badgeHtml = `<div class="wish-badge earned">✓ Заслужено! 🎉</div>`;
+            } else if (percent !== null) {
+                badgeHtml = `<div class="wish-badge locked">Потрібно 90%+, щоб розблокувати бонус (поточний результат: ${percent}%) 🎯</div>`;
+            } else {
+                badgeHtml = `<div class="wish-badge locked">Пройди тест на 90%+, щоб розблокувати бонус 🎯</div>`;
+            }
+
+            const existingWish = allWishes.find(w => w.role === currentRole && Number(w.lesson) === lessonId);
+            const wishValue = existingWish ? existingWish.wish : '';
+
             const card = document.createElement('div');
             card.className = 'lesson-card';
             card.innerHTML = `
-                <div>
-                    <strong>Урок №${lessonId}</strong>
-                    <div style="font-size: 14px; color: #666;">Питань: ${lessonsObj[lessonId]}</div>
-                    <div style="font-size: 13px; color: #e84393; font-weight: bold; margin-top: 4px;">Результат: ${savedScore}</div>
+                <div class="lesson-card-content">
+                    <div class="lesson-info" onclick="startLesson(${lessonId})">
+                        <strong>Урок №${lessonId}</strong>
+                        <div style="font-size: 14px; color: #666;">Питань: ${lessonsObj[lessonId]}</div>
+                        <div style="font-size: 13px; color: #e84393; font-weight: bold; margin-top: 4px;">Результат: ${savedScoreText}</div>
+                    </div>
+                    <div class="lesson-actions">
+                        <button class="btn" style="padding: 6px 12px; font-size: 13px; background: #e67e22;" onclick="openCheatSheet(${lessonId})">Шпаргалка 📋</button>
+                        <button class="btn" style="padding: 6px 12px; font-size: 13px; background: #e84393;" onclick="startLesson(${lessonId})">Розпочати ➔</button>
+                    </div>
                 </div>
-                <div>
-                    <button class="btn" style="padding: 6px 12px; font-size: 13px; margin-bottom: 5px; background: #e67e22;" onclick="event.stopPropagation(); openCheatSheet(${lessonId})">Шпаргалка 📋</button>
-                    <div style="text-align: right;"><span style="color: #e84393; font-weight: bold;">Розпочати ➔</span></div>
+                <div class="wish-section">
+                    ${badgeHtml}
+                    <div class="wish-row">
+                        <input type="text" class="wish-input" id="wish-input-${lessonId}" placeholder="Бажання чи подарунок до цього уроку..." value="${escapeAttr(wishValue)}">
+                        <button class="btn wish-btn" onclick="saveWish(${lessonId})">💌 Зберегти</button>
+                    </div>
+                    <span class="wish-saved-msg" id="wish-msg-${lessonId}"></span>
                 </div>
             `;
-            card.onclick = () => startLesson(Number(lessonId));
             listDiv.appendChild(card);
         });
+    }
+
+    async function saveWish(lessonId) {
+        const input = document.getElementById(`wish-input-${lessonId}`);
+        const msg = document.getElementById(`wish-msg-${lessonId}`);
+        const wishText = input ? input.value.trim() : '';
+
+        if (!wishText) {
+            if (msg) { msg.style.color = '#e74c3c'; msg.innerText = 'Спершу введи бажання'; }
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/wishes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: currentRole, wish: wishText, lesson: lessonId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                await fetchWishes();
+                if (msg) {
+                    msg.style.color = '#27ae60';
+                    msg.innerText = 'Збережено ✅';
+                    setTimeout(() => { msg.innerText = ''; }, 2500);
+                }
+            } else if (msg) {
+                msg.style.color = '#e74c3c';
+                msg.innerText = 'Помилка при збереженні';
+            }
+        } catch (e) {
+            if (msg) { msg.style.color = '#e74c3c'; msg.innerText = "Немає зв'язку з сервером"; }
+        }
     }
 
     function openCheatSheet(lessonId) {
@@ -398,78 +515,30 @@
         resultComment.innerHTML = `<strong>Пояснення:</strong> ${commentText}`;
     }
 
-    async function loadNextQuestion() {
+    function loadNextQuestion() {
         currentIndex++;
-        
+
         if (currentIndex < currentLessonQuestions.length) {
             showQuestion();
         } else {
             const total = currentLessonQuestions.length;
             const percent = Math.round((correctAnswersCount / total) * 100);
-            
+
             localStorage.setItem(`pdr_score_${currentRole}_${currentLessonId}`, `${percent}%`);
 
             const resultBox = document.getElementById('result-box');
             resultBox.className = 'correct-box';
-            
-            const verb = currentRole === 'nastia' ? 'здобула' : 'здобув';
 
             let message = `<h2 style="text-align:center;">Урок завершено! 🏆</h2><p style="text-align:center;">Правильних відповідей: <b>${correctAnswersCount} з ${total}</b> (${percent}%)</p>`;
 
-            // Перевіряємо через сервер, чи вже є бажання для цього користувача та уроку
-            let hasAlreadyWished = false;
-            try {
-                const res = await fetch('/api/admin/wishes');
-                const wishes = await res.json();
-                hasAlreadyWished = wishes.some(w => w.role === currentRole && Number(w.lesson) === Number(currentLessonId));
-            } catch (e) {
-                console.error(e);
+            if (percent >= 90) {
+                message += `<p style="text-align:center; color: #27ae60; font-weight: bold;">🌟 Понад 90%! Заглянь у список уроків — там з'явилась позначка "Заслужено", і туди можна вписати бажання 🎁</p>`;
+            } else {
+                message += `<p style="text-align:center;">Для позначки "Заслужено" треба набрати 90% і більше. Спробуй ще раз!</p>`;
             }
 
-            if (percent >= 90 && !hasAlreadyWished) {
-                message += `<div style="background: #fff3cd; padding: 15px; border-radius: 8px; border: 2px dashed #ffc107; margin-top: 15px; text-align: center;">
-                    <h3 style="color: #856404; margin-bottom: 5px;">🌟 Вітання! Набрано понад 90%! 🌟</h3>
-                    <p style="color: #856404;">Ти ${verb} право загадати бажання! Запиши його сюди:</p>
-                    <input type="text" id="user-wish" placeholder="Наприклад: Хочу піцу або кіно..." style="width: 80%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; margin-bottom: 10px;"><br>
-                    <button class="btn btn-nastia" style="width: auto; display: inline-block;" onclick="sendWish()">Надіслати бажання 🎁</button>
-                </div>`;
-            } else if (percent >= 90 && hasAlreadyWished) {
-                message += `<p style="text-align:center; color: #27ae60; font-weight: bold;">Ти вже скористався/лась правом на бажання для цього уроку ❤️</p>`;
-            } else {
-                message += `<p style="text-align:center;">Для призового бажання треба набрати 90% і більше. Спробуй ще раз!</p>`;
-            }
-            
             message += `<button class="btn" style="margin-top: 15px;" onclick="showLessonsScreen()">До списку уроків</button>`;
             resultBox.innerHTML = message;
-        }
-    }
-
-    async function sendWish() {
-        const wishInput = document.getElementById('user-wish');
-        const wishText = wishInput ? wishInput.value.trim() : "";
-        
-        if (!wishText) {
-            alert('Будь ласка, введи своє бажання!');
-            return;
-        }
-
-        try {
-            const res = await fetch('/api/wishes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ role: currentRole, wish: wishText, lesson: currentLessonId })
-            });
-            const data = await res.json();
-            if (data.success) {
-                alert('Бажання успішно загадано і збережено! ❤️');
-                wishInput.disabled = true;
-                // Повторно викликаємо фінал, щоб оновити екран і сховати форму
-                loadNextQuestion();
-            } else {
-                alert('Помилка при збереженні бажання.');
-            }
-        } catch (e) {
-            alert('Помилка зв\'язку з сервером!');
         }
     }
 
