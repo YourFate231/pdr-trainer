@@ -27,24 +27,25 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Функция безопасного чтения вопросов (с защитой от пустого файла)
+// Функція безпечного читання питань (захист від пустого/бинного файлу)
 const getQuestions = () => {
     const qFile = path.join(__dirname, 'questions.json');
-    if (!fs.existsSync(qFile)) {
-        return [];
-    }
+    if (!fs.existsSync(qFile)) return [];
     const data = fs.readFileSync(qFile, 'utf-8').trim();
-    if (data === "") {
-        return [];
-    }
-    try {
-        return JSON.parse(data);
-    } catch (e) {
-        return [];
-    }
+    if (data === "") return [];
+    try { return JSON.parse(data); } catch (e) { return []; }
 };
 
-// Отдаем список вопросов для тренажера (без правильных ответов)
+// Функція безпечного читання бажань
+const getWishes = () => {
+    const wishFile = path.join(__dirname, 'wishes.json');
+    if (!fs.existsSync(wishFile)) return [];
+    const data = fs.readFileSync(wishFile, 'utf-8').trim();
+    if (data === "") return [];
+    try { return JSON.parse(data); } catch (e) { return []; }
+};
+
+// Отдаем список вопросов для тренажера (без правильних відповідей)
 app.get('/api/questions', (req, res) => {
     const questions = getQuestions();
     const safeQuestions = questions.map(q => ({
@@ -57,12 +58,12 @@ app.get('/api/questions', (req, res) => {
     res.json(safeQuestions);
 });
 
-// Отдаем полные вопросы для админки
+// Отдаем повні питання (використовується і адмінкою, і фронтом учнів — авторизації в проєкті немає)
 app.get('/api/admin/questions', (req, res) => {
     res.json(getQuestions());
 });
 
-// Принимаем ответ от ученика (Насти или Дани)
+// Приймаємо відповідь від учня (Насті чи Дані)
 app.post('/api/submit', (req, res) => {
     const { questionId, answerIndex, role } = req.body;
     const questions = getQuestions();
@@ -72,7 +73,7 @@ app.post('/api/submit', (req, res) => {
         return res.status(404).json({ error: 'Question not found' });
     }
 
-    // Жесткое приведение к числу исключает баги со строками/числами (особенно для индекса 0)
+    // Жорстке приведення до числа виключає баги з рядками/числами (особливо для індексу 0)
     const isCorrect = Number(q.correct) === Number(answerIndex);
 
     const logFile = path.join(__dirname, 'database.json');
@@ -86,8 +87,8 @@ app.post('/api/submit', (req, res) => {
 
     const attempt = {
         timestamp: new Date().toISOString(),
-        role: role || 'nastia', // Фиксируем, кто именно проходил тест
-        lesson: q.lesson,
+        role: role || 'nastia', // Фіксуємо, хто саме проходив тест
+        lesson: q.lesson || 1,
         questionId,
         answerIndex,
         isCorrect
@@ -102,53 +103,70 @@ app.post('/api/submit', (req, res) => {
     });
 });
 
-// Сохранение загаданного желания за успешный испит ( >= 90% )
-app.post('/api/wishes', (req, res) => {
-    const { role, wish } = req.body;
-    const wishFile = path.join(__dirname, 'wishes.json');
-    let wishes = [];
-    
-    if (fs.existsSync(wishFile)) {
-        const data = fs.readFileSync(wishFile, 'utf-8').trim();
-        if (data !== "") {
-            try { wishes = JSON.parse(data); } catch (e) { wishes = []; }
-        }
-    }
+// Список усіх загаданих бажань (потрібен і адмінці, і карткам уроків на головному екрані)
+app.get('/api/admin/wishes', (req, res) => {
+    res.json(getWishes());
+});
 
-    wishes.push({
+// Збереження/оновлення бажання, прив'язаного до ролі та конкретного уроку.
+// Повторне збереження для тієї самої пари (role, lesson) перезаписує попереднє значення —
+// поле бажання в картці уроку можна редагувати будь-коли.
+app.post('/api/wishes', (req, res) => {
+    const { role, wish, lesson } = req.body;
+    const wishFile = path.join(__dirname, 'wishes.json');
+    let wishes = getWishes();
+
+    const safeRole = role || 'nastia';
+    const safeLesson = Number(lesson) || 1;
+
+    const existingIndex = wishes.findIndex(w => w.role === safeRole && Number(w.lesson) === safeLesson);
+
+    const newWishEntry = {
         timestamp: new Date().toISOString(),
-        role: role || 'nastia',
+        date: new Date().toLocaleDateString('uk-UA'),
+        role: safeRole,
+        lesson: safeLesson,
         wish: wish || 'Без тексту'
-    });
+    };
+
+    if (existingIndex !== -1) {
+        wishes[existingIndex] = newWishEntry;
+    } else {
+        wishes.push(newWishEntry);
+    }
 
     fs.writeFileSync(wishFile, JSON.stringify(wishes, null, 2), 'utf-8');
     res.json({ success: true, message: 'Бажання успішно збережено!' });
 });
 
-// Статистика для админки
+// Скидання (повне очищення) усіх бажань
+app.delete('/api/admin/wishes', (req, res) => {
+    const wishFile = path.join(__dirname, 'wishes.json');
+    fs.writeFileSync(wishFile, JSON.stringify([], null, 2), 'utf-8');
+    res.json({ success: true, message: 'Всі бажання успішно скинуто!' });
+});
+
+// Статистика для адмінки
 app.get('/api/admin/stats', (req, res) => {
     const logFile = path.join(__dirname, 'database.json');
-    if (!fs.existsSync(logFile)) {
-        return res.json([]);
-    }
+    if (!fs.existsSync(logFile)) return res.json([]);
     const logData = fs.readFileSync(logFile, 'utf-8').trim();
     if (logData === "") return res.json([]);
     try {
-        const logs = JSON.parse(logData);
-        res.json(logs);
+        res.json(JSON.parse(logData));
     } catch (e) {
         res.json([]);
     }
 });
 
-// Очистка статистики
+// Очищення статистики
 app.delete('/api/admin/stats', (req, res) => {
     const logFile = path.join(__dirname, 'database.json');
     fs.writeFileSync(logFile, JSON.stringify([], null, 2), 'utf-8');
     res.json({ success: true, message: 'Статистику очищено' });
 });
 
-// Добавление нового вопроса (с загрузкой картинки через multer и защитой пустого файла)
+// Додавання нового питання (із завантаженням картинки через multer)
 app.post('/api/admin/questions', upload.single('imageFile'), (req, res) => {
     const qFile = path.join(__dirname, 'questions.json');
     let questions = getQuestions();
@@ -160,7 +178,7 @@ app.post('/api/admin/questions', upload.single('imageFile'), (req, res) => {
 
     let answersParsed = req.body.answers;
     if (typeof answersParsed === 'string') {
-        try { answersParsed = JSON.parse(answersParsed); } catch(e) {}
+        try { answersParsed = JSON.parse(answersParsed); } catch (e) {}
     }
 
     const newQuestion = {
@@ -178,11 +196,11 @@ app.post('/api/admin/questions', upload.single('imageFile'), (req, res) => {
     res.json({ success: true, question: newQuestion });
 });
 
-// Редактирование существующего вопроса по ID
+// Редагування існуючого питання за ID
 app.put('/api/admin/questions/:id', upload.single('imageFile'), (req, res) => {
     const qId = Number(req.params.id);
     const qFile = path.join(__dirname, 'questions.json');
-    
+
     let questions = getQuestions();
     const index = questions.findIndex(q => q.id === qId);
 
@@ -197,7 +215,7 @@ app.put('/api/admin/questions/:id', upload.single('imageFile'), (req, res) => {
 
     let answersParsed = req.body.answers;
     if (typeof answersParsed === 'string') {
-        try { answersParsed = JSON.parse(answersParsed); } catch(e) {}
+        try { answersParsed = JSON.parse(answersParsed); } catch (e) {}
     }
 
     questions[index] = {
@@ -214,11 +232,11 @@ app.put('/api/admin/questions/:id', upload.single('imageFile'), (req, res) => {
     res.json({ success: true, question: questions[index] });
 });
 
-// Удаление вопроса по ID
+// Видалення питання за ID
 app.delete('/api/admin/questions/:id', (req, res) => {
     const qId = Number(req.params.id);
     const qFile = path.join(__dirname, 'questions.json');
-    
+
     let questions = getQuestions();
     const filtered = questions.filter(q => q.id !== qId);
 
