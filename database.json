@@ -204,5 +204,213 @@
     "questionId": 5,
     "answerIndex": 0,
     "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:45:16.584Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:46:05.194Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:46:43.733Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:46:46.735Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 2,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:46:53.984Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:48:42.471Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:48:44.392Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 2,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:48:53.935Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 1,
+    "isCorrect": false
+  },
+  {
+    "timestamp": "2026-09-10T21:49:10.286Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 2,
+    "isCorrect": false
+  },
+  {
+    "timestamp": "2026-09-10T21:50:39.191Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:50:42.147Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 2,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:50:46.431Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:51:04.240Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:51:07.283Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 2,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:51:13.059Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 1,
+    "isCorrect": false
+  },
+  {
+    "timestamp": "2026-09-10T21:52:06.342Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:52:08.128Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 2,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:52:11.918Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:55:55.463Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:55:57.107Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 2,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:56:02.758Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T21:56:09.689Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T22:00:11.553Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T22:00:13.497Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 2,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T22:00:21.574Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 0,
+    "isCorrect": true
+  },
+  {
+    "timestamp": "2026-09-10T22:00:26.910Z",
+    "role": "dania",
+    "lesson": 1,
+    "questionId": 1,
+    "answerIndex": 0,
+    "isCorrect": true
   }
 ]

@@ -4,7 +4,8 @@
   "description": "PDR Trainer for girlfriend",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "migrate": "node migrate-to-mongo.js"
   },
   "keywords": [],
   "author": "",
@@ -12,7 +13,9 @@
   "type": "commonjs",
   "dependencies": {
     "cors": "^2.8.6",
+    "dotenv": "^16.4.5",
     "express": "^5.2.1",
+    "mongodb": "^6.9.0",
     "multer": "^2.3.0"
   }
 }
