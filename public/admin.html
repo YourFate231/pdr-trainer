@@ -123,6 +123,7 @@
     <div class="header-flex">
         <h2>🎁 Загадані бажання (Настя та Даня)</h2>
         <div>
+            <button class="btn btn-warning" onclick="resetProgressOnServer()" style="margin-right: 10px;">🔄 Скинути прогрес уроків</button>
             <button class="btn btn-warning" onclick="resetWishesOnServer()" style="margin-right: 10px;">🔄 Скинути бажання</button>
             <button class="btn" onclick="loadAdminWishes()">Оновити 🔄</button>
         </div>
@@ -137,6 +138,24 @@
             <div id="dania-wishes-list">Завантаження...</div>
         </div>
     </div>
+</div>
+
+<div class="container">
+    <h2>📥 Масовий імпорт бази питань з файлу</h2>
+    <p style="color: #9fb3d6; font-size: 13.5px; margin-top: 6px;">
+        Завантаж JSON-файл з питаннями, розбитими по уроках — це швидше, ніж додавати кожне питання вручну через форму вище.
+        Формат файлу описаний у прикладі, який дав Claude в чаті (поля: <code>lesson</code>, <code>question</code>, <code>image</code>, <code>answers</code>, <code>correct</code>, <code>comment</code>, необов'язково <code>rule</code> / <code>ruleLink</code> — номер пункту ПДР і посилання на нього автоматично вшиються в пояснення).
+    </p>
+    <div class="form-group" style="margin-top: 14px;">
+        <label>JSON-файл з базою питань:</label>
+        <input type="file" id="import-file" accept="application/json,.json">
+    </div>
+    <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; cursor: pointer; font-weight: 700; color: #cdd7ea;">
+        <input type="checkbox" id="import-replace-all" style="width: auto;">
+        Замінити всю поточну базу питань цим файлом (інакше питання просто додадуться до наявних)
+    </label>
+    <button class="btn btn-success" onclick="handleBulkImport()">📥 Імпортувати питання з файлу</button>
+    <div id="import-status" style="margin-top: 10px; font-weight: 700;"></div>
 </div>
 
 <div class="container">
@@ -241,6 +260,17 @@
                 loadAdminWishes();
             } else {
                 alert("Помилка при скиданні бажань.");
+            }
+        }
+    }
+
+    async function resetProgressOnServer() {
+        if (confirm("Точно хочеш скинути прогрес проходження уроків (і Насті, і Дані)? Позначки \"Заслужено\" та форми бажань знову сховаються, доки урок не пройдуть заново на 90%+.")) {
+            const res = await fetch('/api/admin/scores', { method: 'DELETE' });
+            if (res.ok) {
+                alert("Прогрес проходження уроків скинуто!");
+            } else {
+                alert("Помилка при скиданні прогресу.");
             }
         }
     }
@@ -460,6 +490,70 @@
             alert(editId ? 'Питання оновлено! ✏️' : 'Питання додано! 🎉');
             resetForm();
             loadQuestionsList();
+        }
+    }
+
+    async function handleBulkImport() {
+        const fileInput = document.getElementById('import-file');
+        const statusDiv = document.getElementById('import-status');
+        const replaceAll = document.getElementById('import-replace-all').checked;
+        const file = fileInput.files[0];
+
+        if (!file) {
+            statusDiv.style.color = '#f87171';
+            statusDiv.innerText = 'Спочатку обери JSON-файл.';
+            return;
+        }
+
+        statusDiv.style.color = '#9fb3d6';
+        statusDiv.innerText = 'Читаю файл...';
+
+        try {
+            const text = await file.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                statusDiv.style.color = '#f87171';
+                statusDiv.innerText = 'Файл не є коректним JSON. Перевір синтаксис (коми, лапки, дужки).';
+                return;
+            }
+
+            // Дозволяємо завантажити або {"lessons": [...]}, або одразу масив уроків [...]
+            const lessons = Array.isArray(data) ? data : data.lessons;
+            if (!Array.isArray(lessons)) {
+                statusDiv.style.color = '#f87171';
+                statusDiv.innerText = 'У файлі очікується масив уроків (поле "lessons" або сам файл — масив).';
+                return;
+            }
+
+            if (replaceAll && !confirm('Точно замінити ВСЮ поточну базу питань вмістом цього файлу? Це видалить усі наявні питання.')) {
+                statusDiv.innerText = '';
+                return;
+            }
+
+            statusDiv.innerText = 'Імпортую...';
+
+            const res = await fetch('/api/admin/questions/import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ replaceAll, lessons })
+            });
+            const result = await res.json();
+
+            if (res.ok && result.success) {
+                statusDiv.style.color = '#34d399';
+                statusDiv.innerText = `✅ Імпортовано питань: ${result.imported}${result.replacedAll ? ' (стара база була замінена)' : ''}`;
+                fileInput.value = '';
+                loadQuestionsList();
+            } else {
+                statusDiv.style.color = '#f87171';
+                statusDiv.innerText = `Помилка: ${result.error || 'невідома помилка сервера'}`;
+            }
+        } catch (e) {
+            console.error(e);
+            statusDiv.style.color = '#f87171';
+            statusDiv.innerText = "Немає зв'язку з сервером під час імпорту.";
         }
     }
 

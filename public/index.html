@@ -3,17 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>ПДД Тренажер ❤️</title>
+    <title>ПДД Тренажер 🐹</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+        :root {
+            --accent: #ff5da2;
+            --accent2: #ff9fc4;
+            --accent-soft: rgba(255, 93, 162, 0.22);
+            --accent-glow: rgba(255, 93, 162, 0.45);
+        }
+        body.role-dania {
+            --accent: #4fb2ff;
+            --accent2: #7fd0ff;
+            --accent-soft: rgba(79, 178, 255, 0.22);
+            --accent-glow: rgba(79, 178, 255, 0.45);
+        }
+
         body {
             font-family: 'Nunito', Arial, sans-serif;
-            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 45%, #a1c4fd 100%);
-            background-attachment: fixed;
             margin: 0;
             padding: 24px 16px calc(24px + env(safe-area-inset-bottom)) 16px;
             display: flex;
@@ -21,14 +33,36 @@
             align-items: center;
             min-height: 100vh;
             min-height: 100dvh;
+            position: relative;
+            overflow-x: hidden;
+            color: #eef0ff;
+            background:
+                radial-gradient(circle at 12% 18%, rgba(255, 93, 162, 0.35) 0%, transparent 42%),
+                radial-gradient(circle at 88% 12%, rgba(79, 178, 255, 0.35) 0%, transparent 42%),
+                radial-gradient(circle at 50% 92%, rgba(155, 110, 255, 0.30) 0%, transparent 50%),
+                linear-gradient(160deg, #150b2e 0%, #23134a 45%, #101b3a 100%);
+            background-attachment: fixed;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.5;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cellipse cx='35' cy='45' rx='11' ry='9'/%3E%3Ccircle cx='23' cy='28' r='4.5'/%3E%3Ccircle cx='35' cy='23' r='4.5'/%3E%3Ccircle cx='47' cy='28' r='4.5'/%3E%3C/g%3E%3C/svg%3E");
+            background-size: 70px 70px;
         }
 
         .container {
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(6px);
+            position: relative;
+            z-index: 1;
+            background: rgba(24, 18, 46, 0.62);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             padding: 34px;
-            border-radius: 22px;
-            box-shadow: 0 20px 45px rgba(80, 40, 90, 0.18);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 25px 60px rgba(5, 0, 20, 0.45), 0 0 0 1px rgba(255,255,255,0.03) inset, 0 0 40px var(--accent-soft);
             max-width: 680px;
             width: 100%;
             animation: fadeIn 0.35s ease;
@@ -46,11 +80,11 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        h2, h3 { color: #2d2540; margin-top: 0; font-weight: 800; }
-        p { color: #4a4458; }
+        h2, h3 { color: #ffffff; margin-top: 0; font-weight: 800; letter-spacing: 0.01em; }
+        p { color: #cfd3f0; }
 
         .btn {
-            background: linear-gradient(135deg, #4facfe 0%, #3498db 100%);
+            background: linear-gradient(135deg, var(--accent2) 0%, var(--accent) 100%);
             color: white;
             border: none;
             padding: 14px 20px;
@@ -64,25 +98,25 @@
             margin-top: 15px;
             text-decoration: none;
             transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
-            box-shadow: 0 6px 16px rgba(52, 152, 219, 0.3);
+            box-shadow: 0 6px 20px var(--accent-glow);
         }
-        .btn:hover { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 10px 22px rgba(52, 152, 219, 0.38); }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px var(--accent-glow); }
         .btn:active { transform: translateY(0); }
 
-        .btn-nastia { background: linear-gradient(135deg, #ff9fc4 0%, #e84393 100%); box-shadow: 0 6px 16px rgba(232, 67, 147, 0.32); }
-        .btn-dania { background: linear-gradient(135deg, #63b3f5 0%, #0984e3 100%); box-shadow: 0 6px 16px rgba(9, 132, 227, 0.32); }
-        .btn-muted { background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%); box-shadow: 0 6px 16px rgba(100, 116, 139, 0.28); }
+        .btn-nastia { background: linear-gradient(135deg, #ff9fc4 0%, #ff4f9a 100%); box-shadow: 0 6px 20px rgba(255, 79, 154, 0.4); }
+        .btn-dania { background: linear-gradient(135deg, #7fd0ff 0%, #2e93f5 100%); box-shadow: 0 6px 20px rgba(46, 147, 245, 0.4); }
+        .btn-muted { background: linear-gradient(135deg, #6b7290 0%, #4a5070 100%); box-shadow: 0 6px 16px rgba(30, 34, 60, 0.4); }
 
         .lesson-card {
-            background: #fff;
-            border: 1px solid #f0e6ee;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 18px;
             border-radius: 18px;
             margin-bottom: 16px;
-            box-shadow: 0 6px 18px rgba(90, 60, 100, 0.08);
-            transition: box-shadow 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 8px 24px rgba(5, 0, 20, 0.25);
+            transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
         }
-        .lesson-card:hover { box-shadow: 0 10px 26px rgba(90, 60, 100, 0.14); }
+        .lesson-card:hover { box-shadow: 0 12px 30px rgba(5, 0, 20, 0.35), 0 0 24px var(--accent-soft); border-color: var(--accent-soft); }
         .lesson-card-content {
             display: flex;
             justify-content: space-between;
@@ -91,16 +125,16 @@
             flex-wrap: wrap;
         }
         .lesson-info { cursor: pointer; flex: 1; min-width: 160px; }
-        .lesson-info:hover .lesson-info-title { color: #e84393; }
-        .lesson-info-title { font-size: 17px; font-weight: 800; color: #2d2540; transition: color 0.15s ease; }
-        .lesson-meta { font-size: 13.5px; color: #7a7488; margin-top: 4px; }
-        .lesson-score { font-size: 13.5px; color: #e84393; font-weight: 700; margin-top: 6px; }
+        .lesson-info:hover .lesson-info-title { color: var(--accent2); }
+        .lesson-info-title { font-size: 17px; font-weight: 800; color: #ffffff; transition: color 0.15s ease; }
+        .lesson-meta { font-size: 13.5px; color: #a9adcf; margin-top: 4px; }
+        .lesson-score { font-size: 13.5px; color: var(--accent2); font-weight: 700; margin-top: 6px; }
 
         .score-bar-track {
             width: 100%;
             height: 7px;
             border-radius: 6px;
-            background: #f1e8ee;
+            background: rgba(255, 255, 255, 0.1);
             margin-top: 8px;
             overflow: hidden;
         }
@@ -118,12 +152,12 @@
             min-width: 140px;
         }
         .lesson-actions .btn { margin-top: 0; padding: 9px 14px; font-size: 13.5px; }
-        .btn-cheat { background: linear-gradient(135deg, #ffc46b 0%, #e67e22 100%); box-shadow: 0 6px 14px rgba(230, 126, 34, 0.3); }
+        .btn-cheat { background: linear-gradient(135deg, #ffc46b 0%, #e67e22 100%); box-shadow: 0 6px 16px rgba(230, 126, 34, 0.35); }
 
         .wish-section {
             margin-top: 14px;
             padding-top: 12px;
-            border-top: 1px dashed #ece2ea;
+            border-top: 1px dashed rgba(255, 255, 255, 0.15);
         }
         .wish-badge {
             font-size: 12.5px;
@@ -133,38 +167,41 @@
             margin-bottom: 10px;
             display: inline-block;
         }
-        .wish-badge.earned { background: #d9f7e6; color: #14804a; }
-        .wish-badge.locked { background: #fff2d6; color: #9a6b0a; }
+        .wish-badge.earned { background: rgba(52, 211, 153, 0.18); color: #6ee7b7; }
+        .wish-badge.locked { background: rgba(251, 191, 36, 0.16); color: #fcd34d; }
         .wish-row { display: flex; gap: 8px; }
         .wish-input {
             flex: 1;
             min-width: 0;
             padding: 10px 12px;
             border-radius: 12px;
-            border: 1.5px solid #ecdff0;
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
             font-size: 16px;
             font-family: inherit;
-            background: #fbf7fa;
+            background: rgba(255, 255, 255, 0.06);
+            color: #ffffff;
             transition: border-color 0.15s ease;
         }
-        .wish-input:focus { outline: none; border-color: #e84393; background: #fff; }
-        .wish-btn { width: auto; padding: 10px 16px; margin: 0; background: linear-gradient(135deg, #ff9fc4 0%, #e84393 100%); white-space: nowrap; box-shadow: 0 6px 14px rgba(232, 67, 147, 0.3); }
+        .wish-input::placeholder { color: #9296b8; }
+        .wish-input:focus { outline: none; border-color: var(--accent); background: rgba(255, 255, 255, 0.1); }
+        .wish-btn { width: auto; padding: 10px 16px; margin: 0; background: linear-gradient(135deg, #ff9fc4 0%, #ff4f9a 100%); white-space: nowrap; box-shadow: 0 6px 16px rgba(255, 79, 154, 0.35); }
         .wish-saved-msg { display: block; font-size: 12px; margin-top: 7px; min-height: 14px; font-weight: 700; }
 
-        .question-box { margin-bottom: 18px; font-size: 19px; font-weight: 800; color: #2d2540; line-height: 1.4; }
+        .question-box { margin-bottom: 18px; font-size: 19px; font-weight: 800; color: #ffffff; line-height: 1.4; }
         .answers-list { list-style: none; padding: 0; margin: 0; }
         .answers-list li {
             margin-bottom: 10px;
             padding: 14px 16px;
-            border: 2px solid #f0e6ee;
+            border: 2px solid rgba(255, 255, 255, 0.12);
             border-radius: 14px;
             cursor: pointer;
-            background: #fff;
+            background: rgba(255, 255, 255, 0.05);
+            color: #eef0ff;
             font-size: 15px;
             transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
         }
-        .answers-list li:hover { background-color: #fdf5f9; border-color: #f5b9d3; transform: translateX(2px); }
-        .answers-list li.selected { background-color: #fdeef5; border-color: #e84393; font-weight: 700; }
+        .answers-list li:hover { background-color: rgba(255, 255, 255, 0.09); border-color: var(--accent-soft); transform: translateX(2px); }
+        .answers-list li.selected { background-color: var(--accent-soft); border-color: var(--accent); font-weight: 700; }
 
         #result-box {
             margin-top: 20px;
@@ -172,8 +209,9 @@
             border-radius: 18px;
             display: none;
         }
-        .correct-box { background-color: #e3f9ec; color: #14804a; border: 2px solid #b9ecce; }
-        .incorrect-box { background-color: #fdecec; color: #b93a3a; border: 2px solid #f6c6c6; }
+        .correct-box { background-color: rgba(52, 211, 153, 0.14); color: #86f0c4; border: 2px solid rgba(52, 211, 153, 0.35); }
+        .incorrect-box { background-color: rgba(248, 113, 113, 0.14); color: #ffb3b3; border: 2px solid rgba(248, 113, 113, 0.35); }
+        .correct-box p, .incorrect-box p { color: inherit; }
 
         .hamster-img {
             width: 96px;
@@ -181,22 +219,26 @@
             object-fit: cover;
             border-radius: 50%;
             margin: 12px auto;
-            border: 4px solid white;
+            border: 4px solid var(--accent);
             display: block;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+            box-shadow: 0 0 24px var(--accent-glow);
         }
         .hidden { display: none !important; }
-        .ans-item.revealed-correct { color: #14804a; font-weight: 700; }
+        .ans-item.revealed-correct { color: #6ee7b7; font-weight: 700; }
 
         #lesson-final-box { text-align: center; }
         #lesson-final-box h2 { margin-bottom: 6px; }
+        #lesson-final-box p { color: #dfe1fb; }
+
+        .hamster-spin { display: inline-block; animation: bob 1.4s ease-in-out infinite; }
+        @keyframes bob { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-4px) rotate(-8deg); } }
     </style>
 </head>
 <body>
 
 <div class="container" id="main-container">
     <div id="role-screen" class="hidden">
-        <h2>Привіт! Хто заходить? 🚗</h2>
+        <h2>Привіт! Хто заходить? <span class="hamster-spin">🐹</span></h2>
         <p>Обери свій профіль, щоб продовжити:</p>
         <div style="display: flex; gap: 15px;">
             <button class="btn btn-nastia" onclick="selectRole('nastia')">Я — Настя 🌸</button>
@@ -205,7 +247,7 @@
     </div>
 
     <div id="lessons-screen" class="hidden">
-        <h2 id="lessons-greeting">Обери урок ❤️</h2>
+        <h2 id="lessons-greeting">Обери урок 🐹</h2>
         <div id="lessons-list">Завантаження уроків...</div>
         <button class="btn btn-muted" onclick="goHome()">Змінити користувача</button>
     </div>
@@ -222,7 +264,7 @@
     <div id="result-box">
         <h3 id="result-title" style="text-align: center; margin-bottom: 5px;"></h3>
         <div id="hamster-container"></div>
-        <p id="result-comment" style="background: rgba(255,255,255,0.7); padding: 12px 14px; border-radius: 12px; margin: 12px 0;"></p>
+        <p id="result-comment" style="background: rgba(255,255,255,0.08); padding: 12px 14px; border-radius: 12px; margin: 12px 0; color: #eef0ff;"></p>
         <button class="btn" id="next-question-btn" onclick="loadNextQuestion()">Наступне питання</button>
     </div>
 
@@ -241,6 +283,7 @@
 <script>
     let allQuestions = [];
     let allWishes = [];
+    let allScores = [];
     let currentLessonQuestions = [];
     let currentIndex = 0;
     let selectedAnswerIndex = null;
@@ -271,6 +314,11 @@
             .replace(/>/g, '&gt;');
     }
 
+    function applyRoleTheme(role) {
+        document.body.classList.remove('role-nastia', 'role-dania');
+        document.body.classList.add('role-' + (role === 'dania' ? 'dania' : 'nastia'));
+    }
+
     async function fetchWishes() {
         try {
             const res = await fetch('/api/admin/wishes');
@@ -278,6 +326,21 @@
         } catch (e) {
             console.error(e);
             allWishes = [];
+        }
+    }
+
+    // Прогрес проходження уроків тепер зберігається на сервері (колекція "scores"),
+    // а не тільки в localStorage браузера. Це головне джерело правди — тому стара
+    // локальна кеш-копія в браузері більше не може показувати "чужий" чи застарілий
+    // результат (наприклад 100% для уроку, який реально ще не проходили).
+    async function fetchScores() {
+        try {
+            const res = await fetch('/api/admin/scores');
+            allScores = await res.json();
+            return true;
+        } catch (e) {
+            console.error(e);
+            return false;
         }
     }
 
@@ -289,6 +352,7 @@
             const savedRole = localStorage.getItem('pdr_role');
             if (savedRole) {
                 currentRole = savedRole;
+                applyRoleTheme(currentRole);
                 showLessonsScreen();
             } else {
                 showRoleScreen();
@@ -319,13 +383,14 @@
         document.getElementById('lessons-screen').classList.remove('hidden');
 
         const greeting = document.getElementById('lessons-greeting');
-        greeting.innerText = currentRole === 'dania' ? "Обери урок, Даня (Режим тренування) 🛠️" : "Обери урок, Настя ❤️";
+        greeting.innerText = currentRole === 'dania' ? "Обери урок, Даня 🛠️🐹" : "Обери урок, Настя 🌸🐹";
         renderLessons();
     }
 
     function selectRole(role) {
         currentRole = role;
         localStorage.setItem('pdr_role', role);
+        applyRoleTheme(role);
         if (role === 'dania' && window.confirm("Бажаєш перейти в адмін-панель? ОК — в адмінку, Скасувати — як учень.")) {
             window.location.href = '/admin.html';
             return;
@@ -339,11 +404,11 @@
         const listDiv = document.getElementById('lessons-list');
 
         if (!allQuestions || allQuestions.length === 0) {
-            listDiv.innerHTML = '<p style="color: red;">Питань не знайдено.</p>';
+            listDiv.innerHTML = '<p style="color: #ffb3b3;">Питань не знайдено.</p>';
             return;
         }
 
-        await fetchWishes();
+        const scoresOk = await Promise.all([fetchWishes(), fetchScores()]).then(r => r[1]);
 
         const lessonsObj = {};
         allQuestions.forEach(q => {
@@ -356,16 +421,27 @@
 
         Object.keys(lessonsObj).sort((a, b) => Number(a) - Number(b)).forEach(lessonIdStr => {
             const lessonId = Number(lessonIdStr);
-            const rawScore = localStorage.getItem(`pdr_score_${currentRole}_${lessonId}`);
-            const percent = rawScore ? parseInt(rawScore, 10) : null;
-            const savedScoreText = rawScore || 'Ще не пройдено';
+
+            // Сервер — джерело правди. Лише якщо запит до сервера взагалі не вдався
+            // (немає інтернету/сервер лежить), підстраховуємось локальним кешем,
+            // щоб екран не виглядав порожнім.
+            let percent = null;
+            const serverScore = allScores.find(s => s.role === currentRole && Number(s.lesson) === lessonId);
+            if (serverScore) {
+                percent = Number(serverScore.percent);
+            } else if (!scoresOk) {
+                const rawLocal = localStorage.getItem(`pdr_score_${currentRole}_${lessonId}`);
+                percent = rawLocal ? parseInt(rawLocal, 10) : null;
+            }
+
+            const savedScoreText = percent !== null ? `${percent}%` : 'Ще не пройдено';
             const isUnlocked = percent !== null && percent >= 90;
 
             let badgeHtml;
             let wishRowHtml = '';
 
             if (isUnlocked) {
-                badgeHtml = `<div class="wish-badge earned">✓ Заслужено! 🎉</div>`;
+                badgeHtml = `<div class="wish-badge earned">✓ Заслужено! 🎉🐹</div>`;
                 // Форму бажання показуємо ЛИШЕ після успішного проходження уроку (90%+) —
                 // до того вона прихована, щоб не можна було вписати бажання "наперед".
                 const existingWish = allWishes.find(w => w.role === currentRole && Number(w.lesson) === lessonId);
@@ -383,7 +459,7 @@
                 badgeHtml = `<div class="wish-badge locked">Пройди тест на 90%+, щоб розблокувати бонус 🎯</div>`;
             }
 
-            const barColor = percent === null ? '#e2d5e0' : (percent >= 90 ? '#27ae60' : '#e84393');
+            const barColor = percent === null ? 'rgba(255,255,255,0.18)' : (percent >= 90 ? '#34d399' : 'var(--accent)');
             const barWidth = percent === null ? 0 : percent;
 
             const card = document.createElement('div');
@@ -416,7 +492,7 @@
         const wishText = input ? input.value.trim() : '';
 
         if (!wishText) {
-            if (msg) { msg.style.color = '#e74c3c'; msg.innerText = 'Спершу введи бажання'; }
+            if (msg) { msg.style.color = '#ff8a8a'; msg.innerText = 'Спершу введи бажання'; }
             return;
         }
 
@@ -430,16 +506,16 @@
             if (data.success) {
                 await fetchWishes();
                 if (msg) {
-                    msg.style.color = '#27ae60';
+                    msg.style.color = '#6ee7b7';
                     msg.innerText = 'Збережено ✅';
                     setTimeout(() => { msg.innerText = ''; }, 2500);
                 }
             } else if (msg) {
-                msg.style.color = '#e74c3c';
+                msg.style.color = '#ff8a8a';
                 msg.innerText = 'Помилка при збереженні';
             }
         } catch (e) {
-            if (msg) { msg.style.color = '#e74c3c'; msg.innerText = "Немає зв'язку з сервером"; }
+            if (msg) { msg.style.color = '#ff8a8a'; msg.innerText = "Немає зв'язку з сервером"; }
         }
     }
 
@@ -467,13 +543,14 @@
             const itemDiv = document.createElement('div');
             itemDiv.style.marginBottom = '15px';
             itemDiv.style.padding = '10px';
-            itemDiv.style.background = '#f8f9fa';
+            itemDiv.style.background = 'rgba(255,255,255,0.06)';
             itemDiv.style.borderRadius = '8px';
+            itemDiv.style.color = '#eef0ff';
             itemDiv.innerHTML = `
                 <strong>${idx + 1}. ${q.question}</strong>
                 ${imgHtml}
                 ${answersHtml}
-                <div style="font-size: 13px; color: #666; margin-top: 5px;">Пояснення: ${q.comment || 'Відсутнє'}</div>
+                <div style="font-size: 13px; color: #a9adcf; margin-top: 5px;">Пояснення: ${q.comment || 'Відсутнє'}</div>
             `;
             cheatContent.appendChild(itemDiv);
         });
@@ -614,7 +691,14 @@
             const total = currentLessonQuestions.length;
             const percent = Math.round((correctAnswersCount / total) * 100);
 
-            localStorage.setItem(`pdr_score_${currentRole}_${currentLessonId}`, `${percent}%`);
+            // Кешуємо локально (миттєвий офлайн-фолбек) і водночас відправляємо
+            // результат на сервер — саме сервер тепер вирішує, чи урок "пройдено".
+            localStorage.setItem(`pdr_score_${currentRole}_${currentLessonId}`, `${percent}`);
+            fetch('/api/scores', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: currentRole, lesson: currentLessonId, percent })
+            }).catch(e => console.error(e));
 
             // Ховаємо (а не перезаписуємо!) result-box — його внутрішні елементи
             // (#result-title, #hamster-container, #result-comment, #next-question-btn)
@@ -626,10 +710,10 @@
             const finalBox = document.getElementById('lesson-final-box');
             finalBox.classList.remove('hidden');
 
-            let message = `<h2>Урок завершено! 🏆</h2><p>Правильних відповідей: <b>${correctAnswersCount} з ${total}</b> (${percent}%)</p>`;
+            let message = `<h2>Урок завершено! 🏆🐹</h2><p>Правильних відповідей: <b>${correctAnswersCount} з ${total}</b> (${percent}%)</p>`;
 
             if (percent >= 90) {
-                message += `<p style="color: #27ae60; font-weight: bold;">🌟 Понад 90%! Заглянь у список уроків — там з'явилась позначка "Заслужено" і форма для бажання 🎁</p>`;
+                message += `<p style="color: #6ee7b7; font-weight: bold;">🌟 Понад 90%! Заглянь у список уроків — там з'явилась позначка "Заслужено" і форма для бажання 🎁</p>`;
             } else {
                 message += `<p>Для позначки "Заслужено" і форми бажання треба набрати 90% і більше. Спробуй ще раз!</p>`;
             }
