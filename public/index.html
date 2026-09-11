@@ -2,23 +2,25 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ПДД Тренажер ❤️</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
         body {
             font-family: 'Nunito', Arial, sans-serif;
             background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 45%, #a1c4fd 100%);
             background-attachment: fixed;
             margin: 0;
-            padding: 24px 16px;
+            padding: 24px 16px calc(24px + env(safe-area-inset-bottom)) 16px;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            min-height: 100dvh;
         }
 
         .container {
@@ -30,6 +32,13 @@
             max-width: 680px;
             width: 100%;
             animation: fadeIn 0.35s ease;
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 14px 10px calc(14px + env(safe-area-inset-bottom)) 10px; }
+            .container { padding: 20px 16px; border-radius: 18px; }
+            .wish-row { flex-wrap: wrap; }
+            .wish-btn { width: 100%; }
         }
 
         @keyframes fadeIn {
@@ -129,10 +138,11 @@
         .wish-row { display: flex; gap: 8px; }
         .wish-input {
             flex: 1;
+            min-width: 0;
             padding: 10px 12px;
             border-radius: 12px;
             border: 1.5px solid #ecdff0;
-            font-size: 13.5px;
+            font-size: 16px;
             font-family: inherit;
             background: #fbf7fa;
             transition: border-color 0.15s ease;

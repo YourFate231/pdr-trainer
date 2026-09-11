@@ -2,18 +2,19 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Адмінка ПДД Тренажера 🛠️</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
         body {
             font-family: 'Nunito', Arial, sans-serif;
             background: radial-gradient(circle at top left, #26324a 0%, #131c2e 60%, #0d1220 100%);
             color: #e7ecf5;
-            padding: 28px 18px;
+            padding: 28px 18px calc(28px + env(safe-area-inset-bottom)) 18px;
             margin: 0;
         }
         .container {
@@ -30,16 +31,17 @@
         .filters { display: flex; gap: 15px; margin-bottom: 20px; background: #131c2e; padding: 16px; border-radius: 12px; flex-wrap: wrap; align-items: center; }
         .filters select, .filters input {
             padding: 9px 12px; border-radius: 8px; border: 1px solid #2c3a56;
-            background: #0f1729; color: #e7ecf5; font-size: 14px; font-family: inherit;
+            background: #0f1729; color: #e7ecf5; font-size: 16px; font-family: inherit;
         }
         .form-group { margin-bottom: 16px; }
         .form-group label { display: block; margin-bottom: 6px; font-weight: 700; color: #cdd7ea; }
         .form-group input, .form-group textarea {
             width: 100%; padding: 11px 12px; border-radius: 10px; border: 1px solid #2c3a56;
-            background: #0f1729; color: #e7ecf5; font-size: 14px; font-family: inherit; box-sizing: border-box;
+            background: #0f1729; color: #e7ecf5; font-size: 16px; font-family: inherit; box-sizing: border-box;
         }
         .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #4facfe; }
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        .table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; min-width: 480px; border-collapse: collapse; margin-top: 12px; }
         th, td { padding: 12px; border-bottom: 1px solid #26324a; text-align: left; font-size: 14px; }
         th { background: #16223a; color: #9fb3d6; font-weight: 700; text-transform: uppercase; font-size: 12px; letter-spacing: 0.03em; }
         tr:hover td { background: rgba(255,255,255,0.02); }
@@ -66,6 +68,10 @@
         }
         @media (max-width: 600px) {
             .wishes-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 480px) {
+            body { padding: 16px 10px calc(16px + env(safe-area-inset-bottom)) 10px; }
+            .container { padding: 16px; border-radius: 14px; }
         }
     </style>
 </head>
@@ -136,19 +142,21 @@
 <div class="container">
     <h2>База питань 📚</h2>
     <button class="btn" onclick="loadQuestionsList()" style="margin-bottom: 15px; margin-top: 15px;">Оновити список питань 🔄</button>
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Урок</th>
-                <th>Питання</th>
-                <th>Дії</th>
-            </tr>
-        </thead>
-        <tbody id="questions-table">
-            <tr><td colspan="4">Завантаження...</td></tr>
-        </tbody>
-    </table>
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Урок</th>
+                    <th>Питання</th>
+                    <th>Дії</th>
+                </tr>
+            </thead>
+            <tbody id="questions-table">
+                <tr><td colspan="4">Завантаження...</td></tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <div class="container">
@@ -191,20 +199,22 @@
 
     <button class="btn" onclick="loadStats()">Оновити дані 🔄</button>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Хто</th>
-                <th>Час</th>
-                <th>Урок</th>
-                <th>ID питання</th>
-                <th>Статус</th>
-            </tr>
-        </thead>
-        <tbody id="stats-table">
-            <tr><td colspan="5">Завантаження...</td></tr>
-        </tbody>
-    </table>
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>Хто</th>
+                    <th>Час</th>
+                    <th>Урок</th>
+                    <th>ID питання</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody id="stats-table">
+                <tr><td colspan="5">Завантаження...</td></tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script>
